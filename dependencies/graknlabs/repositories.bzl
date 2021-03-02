@@ -31,3 +31,10 @@ def graknlabs_client_nodejs():
         remote = "https://github.com/graknlabs/client-nodejs",
         tag = "2.0.0-alpha-9", # sync-marker: do not remove this comment, this is used for sync-dependencies by @graknlabs_client_nodejs
     )
+
+def graknlabs_common():
+    git_repository(
+        name = "graknlabs_common",
+        remote = "https://github.com/graknlabs/common",
+        tag = "2.0.0-alpha-9", # sync-marker: do not remove this comment, this is used for sync-dependencies by @graknlabs_client_nodejs
+    )

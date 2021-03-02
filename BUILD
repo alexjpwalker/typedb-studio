@@ -19,26 +19,33 @@
 # NOTE: this file needs to be called `BUILD.bzl` to avoid conflicts with `build/` created by `yarn run build`
 
 load("@graknlabs_bazel_distribution//brew:rules.bzl", "deploy_brew")
-load("@graknlabs_dependencies//distribution/artifact:rules.bzl", "artifact_extractor")
+load("@graknlabs_dependencies//distribution:deployment.bzl", "deployment")
+load("@graknlabs_bazel_distribution//artifact:rules.bzl", "artifact_extractor")
+load("@graknlabs_common//test:rules.bzl", "native_grakn_artifact")
 load("@graknlabs_dependencies//tool/release:rules.bzl", "release_validate_deps")
 
 deploy_brew(
     name = "deploy-brew",
     type = "cask",
-    deployment_properties = "@graknlabs_dependencies//distribution:deployment.properties",
+    snapshot = deployment['brew.snapshot'],
+    release = deployment['brew.release'],
     formula = "//config/brew:grakn-workbase.rb",
+)
+
+native_grakn_artifact(
+    name = "native-grakn-artifact",
+    mac_artifact = "@graknlabs_grakn_core_artifact_mac//file",
+    linux_artifact = "@graknlabs_grakn_core_artifact_linux//file",
+    windows_artifact = "@graknlabs_grakn_core_artifact_windows//file",
+    output = "grakn-core-server-native.tar.gz",
+    visibility = ["//test:__subpackages__"],
 )
 
 artifact_extractor(
     name = "grakn-extractor",
-    artifact = "@graknlabs_grakn_core_artifact//file",
+    artifact = ":native-grakn-artifact",
 )
 
-artifact_extractor(
-    name = "grakn-extractor-windows",
-    artifact = "@graknlabs_grakn_core_artifact_windows//file",
-    executor = "cmd"
-)
 
 release_validate_deps(
     name = "release-validate-deps",
