@@ -30,10 +30,10 @@ java_grpc_compile()
 load("@stackb_rules_proto//node:deps.bzl", "node_grpc_compile")
 node_grpc_compile()
 
-# Load NodeJS
+# Load //builder/nodejs
 load("@graknlabs_dependencies//builder/nodejs:deps.bzl", nodejs_deps = "deps")
 nodejs_deps()
-load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories", "yarn_install")
+load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories", "npm_install")
 
 # Load Python
 load("@graknlabs_dependencies//builder/python:deps.bzl", python_deps = "deps")
@@ -98,13 +98,14 @@ load("//dependencies/graknlabs:artifacts.bzl", "graknlabs_grakn_core_artifacts")
 graknlabs_grakn_core_artifacts()
 
 
-#################################
-# Load @graknlabs_client_nodejs #
-#################################
-yarn_install(
+# Load package.json
+node_repositories(
+    preserve_symlinks = False,
+)
+npm_install(
     name = "npm",
     package_json = "//:package.json",
-    yarn_lock = "//:yarn.lock"
+    package_lock_json = "//:package-lock.json",
 )
 
 

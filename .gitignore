@@ -15,3 +15,17 @@ yarn-error.log
 bazel-*
 .ijwb
 
+/tests/e2e/logs/
+.env.local
+.env.*.local
+npm-debug.log*
+
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+#Electron-builder output
+/dist_electron
