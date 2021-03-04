@@ -5,8 +5,8 @@
             <h1>Display Settings</h1>
         </div>
         <div v-show="showConceptDisplayContent">
-            <div class="panel-content" v-if="!currentKeyspace">
-                Please select a keyspace
+            <div class="panel-content" v-if="!currentDatabase">
+                Please select a database
             </div>
 
             <div class="panel-content" v-else v-show="attributesLoaded">
@@ -83,7 +83,7 @@
       // computed
       this.$options.computed = {
         ...(this.$options.computed || {}),
-        ...mapGetters(['currentKeyspace', 'metaTypeInstances', 'selectedNode']),
+        ...mapGetters(['currentDatabase', 'metaTypeInstances', 'selectedNode']),
       };
 
       // methods
@@ -108,7 +108,7 @@
     },
     watch: {
       showConceptDisplayContent(open) {
-        if (open && this.currentKeyspace) {
+        if (open && this.currentDatabase) {
           this.loadMetaTypes();
           this.loadAttributeTypes();
           this.loadColour();

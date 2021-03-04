@@ -71,7 +71,7 @@
       // computed
       this.$options.computed = {
         ...(this.$options.computed || {}),
-        ...mapGetters(['selectedNodes', 'currentKeyspace', 'metaTypeInstances']),
+        ...mapGetters(['selectedNodes', 'currentDatabase', 'metaTypeInstances']),
       };
 
       // methods
@@ -82,7 +82,7 @@
     },
     computed: {
       msg() {
-        if (!this.currentKeyspace) return 'Please select a keyspace';
+        if (!this.currentDatabase) return 'Please select a database';
         else if (!this.selectedNodes || this.selectedNodes.length > 1) return 'Please select a node';
         else if (!this.roles) return 'Roles are being loaded';
         return null;

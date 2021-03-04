@@ -11,7 +11,7 @@
                 <div class="line">
                     <!-- <input class="grakn-input search" placeholder="search for nodes"> -->
                 </div>
-                <keyspaces-handler :localStore="localStore" :toolTipShown="toolTipShown" v-on:toggle-tool-tip="toggleToolTip">></keyspaces-handler>
+                <databases-handler :localStore="localStore" :toolTipShown="toolTipShown" v-on:toggle-tool-tip="toggleToolTip">></databases-handler>
             </div>
         </div>
     </nav>
@@ -94,11 +94,11 @@
 </style>
 
 <script>
-import KeyspacesHandler from '../../shared/KeyspacesHandler.vue';
+import DatabasesHandler from '../../shared/DatabasesHandler.vue';
 
 export default {
   name: 'MenuBar',
-  components: { KeyspacesHandler },
+  components: { DatabasesHandler },
   props: ['localStore'],
   data() {
     return {

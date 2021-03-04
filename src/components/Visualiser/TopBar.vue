@@ -6,11 +6,11 @@
         </div>
 
         <div class="center">
-            <graql-editor :tabId="tabId" v-on:keyspace-not-selected="showKeyspaceToolTip = true"></graql-editor>
+            <graql-editor :tabId="tabId" v-on:database-not-selected="showDatabaseToolTip = true"></graql-editor>
         </div>
 
         <div class="right">
-            <keyspaces-handler :tabId="tabId" :showKeyspaceTooltip="showKeyspaceToolTip" v-on:keyspace-selected="showKeyspaceToolTip = false"></keyspaces-handler>
+            <databases-handler :tabId="tabId" :showDatabaseTooltip="showDatabaseToolTip" v-on:database-selected="showDatabaseToolTip = false"></databases-handler>
             <button class="btn toggle-preferences" @click="$emit('toggle-preferences')"><vue-icon icon="cog" className="vue-icon"></vue-icon></button>
         </div>
     </div>
@@ -75,15 +75,15 @@
 </style>
 
 <script>
-    import KeyspacesHandler from '../shared/KeyspacesHandler.vue';
+    import DatabasesHandler from '../shared/DatabasesHandler.vue';
     import GraqlEditor from './TopBar/GraqlEditor/GraqlEditor.vue';
 
     export default {
-      components: { KeyspacesHandler, GraqlEditor },
+      components: { DatabasesHandler, GraqlEditor },
       props: ['tabId'],
       data() {
         return {
-          showKeyspaceToolTip: false,
+          showDatabaseToolTip: false,
         };
       },
     };

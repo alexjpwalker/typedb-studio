@@ -7,8 +7,8 @@
 
         <div v-show="showRelationsPanel">
 
-            <div class="content noselect" v-if="!currentKeyspace">
-                Please select a keyspace
+            <div class="content noselect" v-if="!currentDatabase">
+                Please select a database
             </div>
             <div class="content noselect" v-else-if="(!selectedNodes || selectedNodes.length > 1)">
                 Please select a node
@@ -98,7 +98,7 @@
       // computed
       this.$options.computed = {
         ...(this.$options.computed || {}),
-        ...mapGetters(['selectedNodes', 'currentKeyspace']),
+        ...mapGetters(['selectedNodes', 'currentDatabase']),
       };
 
       // methods

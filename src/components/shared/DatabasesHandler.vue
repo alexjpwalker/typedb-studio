@@ -1,34 +1,34 @@
 <template>
-<div class="keyspaces-wrapper">
+<div class="databases-wrapper">
 
-    <button :class="(this.showKeyspaceList) ? 'btn keyspaces keyspace-btn' : 'btn keyspaces'" @click="toggleKeyspaceList">
-        {{currentKeyspace | truncate}}
+    <button :class="(this.showDatabaseList) ? 'btn databases database-btn' : 'btn databases'" @click="toggleDatabaseList">
+        {{currentDatabase | truncate}}
         <vue-icon icon="database" className="vue-icon database-icon"></vue-icon>
     </button>
 
-    <tool-tip class="keyspace-tooltip" msg="Please select a keyspace" :isOpen="showKeyspaceTooltip" arrowPosition="right"></tool-tip>
+    <tool-tip class="database-tooltip" msg="Please select a database" :isOpen="showDatabaseTooltip" arrowPosition="right"></tool-tip>
 
 
-        <ul id="keyspaces-list" class="keyspaces-list arrow_box z-depth-1" v-if="showKeyspaceList">
-            <div style="text-align:center;" v-if="allKeyspaces && !allKeyspaces.length">no existing keyspace</div>
-            <input class="input-small" v-model="searchedKeyspace" placeholder="search">
-            <li :id="ks" v-bind:class="(ks === currentKeyspace)? 'ks-key active noselect' : 'ks-key noselect'" v-for="ks in keyspaceList" :key="ks" @click="setKeyspace(ks)">{{ks}}</li>
+        <ul id="databases-list" class="databases-list arrow_box z-depth-1" v-if="showDatabaseList">
+            <div style="text-align:center;" v-if="allDatabases && !allDatabases.length">no existing database</div>
+            <input class="input-small" v-model="searchedDatabase" placeholder="search">
+            <li :id="ks" v-bind:class="(ks === currentDatabase)? 'ks-key active noselect' : 'ks-key noselect'" v-for="ks in databaseList" :key="ks" @click="setDatabase(ks)">{{ks}}</li>
         </ul>
 </div>
 </template>
 
 <style scoped>
 
-    .keyspaces-wrapper {
+    .databases-wrapper {
       z-index: 3;
     }
 
-    .keyspace-tooltip {
+    .database-tooltip {
         right: 136px;
         top: 8px;
     }
 
-    .keyspaces {
+    .databases {
         display: flex;
     }
 
@@ -60,7 +60,7 @@
     }
 
 
-.keyspaces-list {
+.databases-list {
     position: absolute;
     top: 100%;
     margin-top: 5px;
@@ -96,20 +96,20 @@ import { createNamespacedHelpers, mapGetters } from 'vuex';
 
 import storage from '@/components/shared/PersistentStorage';
 
-import { CURRENT_KEYSPACE_CHANGED } from './StoresActions';
+import { CURRENT_DATABASE_CHANGED } from './StoresActions';
 import ToolTip from '../UIElements/ToolTip';
 
 export default {
-  name: 'KeyspacesList',
-  props: ['tabId', 'showKeyspaceTooltip'],
+  name: 'DatabasesList',
+  props: ['tabId', 'showDatabaseTooltip'],
   components: { ToolTip },
   data() {
     return {
-      showKeyspaceList: false,
+      showDatabaseList: false,
       clickEvent: () => {
-        this.showKeyspaceList = false;
+        this.showDatabaseList = false;
       },
-      searchedKeyspace: '',
+      searchedDatabase: '',
     };
   },
   beforeCreate() {
@@ -119,57 +119,57 @@ export default {
     // computed
     this.$options.computed = {
       ...(this.$options.computed || {}),
-      ...mapGetters(['currentKeyspace', 'showSpinner']),
+      ...mapGetters(['currentDatabase', 'showSpinner']),
     };
 
     // methods
     this.$options.methods = {
       ...(this.$options.methods || {}),
-      ...mapActions([CURRENT_KEYSPACE_CHANGED]),
+      ...mapActions([CURRENT_DATABASE_CHANGED]),
     };
   },
   computed: {
-    ...mapGetters(['allKeyspaces', 'isGraknRunning']),
-    keyspaceList() {
-      return this.allKeyspaces.filter(keyspace => keyspace.toLowerCase().includes(this.searchedKeyspace.toLowerCase()));
+    ...mapGetters(['allDatabases', 'isGraknRunning']),
+    databaseList() {
+      return this.allDatabases.filter(database => database.toLowerCase().includes(this.searchedDatabase.toLowerCase()));
     },
   },
   filters: {
     truncate(ks) {
-      if (!ks) return 'keyspace';
+      if (!ks) return 'database';
       if (ks.length > 15) return `${ks.substring(0, 15)}...`;
       return ks;
     },
   },
   watch: {
-    allKeyspaces(val) {
-      // If user deletes current keyspace from Keyspaces page, set new current keyspace to null
-      if (val && !val.includes(this.currentKeyspace)) { this[CURRENT_KEYSPACE_CHANGED](null); }
+    allDatabases(val) {
+      // If user deletes current database from Databases page, set new current database to null
+      if (val && !val.includes(this.currentDatabase)) { this[CURRENT_DATABASE_CHANGED](null); }
     },
     isGraknRunning(val) {
       if (!val) {
-        this.$notifyInfo('It was not possible to retrieve keyspaces <br> - make sure Grakn is running <br> - check that host and port in connection settings are correct');
+        this.$notifyInfo('It was not possible to retrieve databases <br> - make sure Grakn is running <br> - check that host and port in connection settings are correct');
       }
     },
-    // showKeyspaceList(show) {
-    //   // Close keyspaces list when user clicks anywhere else
+    // showDatabaseList(show) {
+    //   // Close databases list when user clicks anywhere else
     //   if (show) window.addEventListener('click', this.clickEvent);
     //   else window.removeEventListener('click', this.clickEvent);
     // },
   },
   methods: {
-    setKeyspace(name) {
-      this.$emit('keyspace-selected');
-      storage.set('current_keyspace_data', name);
-      this[CURRENT_KEYSPACE_CHANGED](name);
-      this.showKeyspaceList = false;
+    setDatabase(name) {
+      this.$emit('database-selected');
+      storage.set('current_database_data', name);
+      this[CURRENT_DATABASE_CHANGED](name);
+      this.showDatabaseList = false;
     },
-    toggleKeyspaceList() {
+    toggleDatabaseList() {
       if (this.showSpinner) {
         this.$notifyInfo('Please wait for action to complete');
       } else {
-        this.$emit('keyspace-selected');
-        this.showKeyspaceList = !this.showKeyspaceList;
+        this.$emit('database-selected');
+        this.showDatabaseList = !this.showDatabaseList;
       }
     },
   },

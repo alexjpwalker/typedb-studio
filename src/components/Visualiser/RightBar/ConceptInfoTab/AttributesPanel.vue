@@ -45,12 +45,12 @@
       // computed
       this.$options.computed = {
         ...(this.$options.computed || {}),
-        ...mapGetters(['selectedNodes', 'currentKeyspace']),
+        ...mapGetters(['selectedNodes', 'currentDatabase']),
       };
     },
     computed: {
       msg() {
-        if (!this.currentKeyspace) return 'Please select a keyspace';
+        if (!this.currentDatabase) return 'Please select a database';
         else if (!this.selectedNodes || this.selectedNodes.length > 1) return 'Please select a node';
         else if (!this.attributes) return 'Attributes are being loaded';
         else if (!this.attributes.length) return 'There are no attributes available';

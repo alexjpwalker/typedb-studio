@@ -6,7 +6,7 @@ import {
   UPDATE_NODES_COLOUR,
   UPDATE_METATYPE_INSTANCES,
   INITIALISE_VISUALISER,
-  CURRENT_KEYSPACE_CHANGED,
+  CURRENT_DATABASE_CHANGED,
   CANVAS_RESET,
   DELETE_SELECTED_NODES,
   LOAD_NEIGHBOURS,
@@ -45,14 +45,14 @@ export default {
     commit('updateCanvasData');
   },
 
-  async [CURRENT_KEYSPACE_CHANGED]({ state, dispatch, commit, rootState }, keyspace) {
-    if (keyspace !== state.currentKeyspace) {
+  async [CURRENT_DATABASE_CHANGED]({ state, dispatch, commit, rootState }, database) {
+    if (database !== state.currentDatabase) {
       dispatch(CANVAS_RESET);
       commit('setCurrentQuery', '');
-      commit('currentKeyspace', keyspace);
+      commit('currentDatabase', database);
 
       if (global.graknSession) await global.graknSession.close();
-      global.graknSession = await global.grakn.session(keyspace, SessionType.DATA);
+      global.graknSession = await global.grakn.session(database, SessionType.DATA);
       // eslint-disable-next-line no-prototype-builtins
       if (!global.graknTx) global.graknTx = {};
       if (global.graknTx[rootState.activeTab]) global.graknTx[rootState.activeTab].close();

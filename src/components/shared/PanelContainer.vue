@@ -67,7 +67,7 @@ export default {
     };
   },
   computed: {
-    // Slider is enabled when there is a selected keyspace and when
+    // Slider is enabled when there is a selected database and when
     // when there is actual content to be shown inside of the current slider.
     showSlider() {
       return (this.isActive && !this.hideSlider);

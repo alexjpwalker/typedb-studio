@@ -19,7 +19,7 @@
       // computed
       this.$options.computed = {
         ...(this.$options.computed || {}),
-        ...mapGetters(['currentKeyspace', 'contextMenu', 'selectedNodes']),
+        ...mapGetters(['currentDatabase', 'contextMenu', 'selectedNodes']),
       };
 
       // methods

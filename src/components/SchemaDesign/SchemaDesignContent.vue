@@ -1,9 +1,9 @@
 <template>
   <transition name="slide-fade" appear>
     <div class="design-wrapper">
-      <top-bar v-on:toggle-preferences="showPreferences = !showPreferences" :showKeyspaceToolTip="showKeyspaceToolTip" v-on:keyspace-selected="showKeyspaceToolTip = false"></top-bar>
+      <top-bar v-on:toggle-preferences="showPreferences = !showPreferences" :showDatabaseToolTip="showDatabaseToolTip" v-on:database-selected="showDatabaseToolTip = false"></top-bar>
       <div class="row">
-        <left-bar v-on:keyspace-not-selected="showKeyspaceToolTip = true"></left-bar>
+        <left-bar v-on:database-not-selected="showDatabaseToolTip = true"></left-bar>
         <div class="column">
           <context-menu></context-menu>
           <graph-canvas></graph-canvas>
@@ -69,7 +69,7 @@ export default {
   data() {
     return {
       showPreferences: false,
-      showKeyspaceToolTip: false,
+      showDatabaseToolTip: false,
     };
   },
   beforeCreate() {

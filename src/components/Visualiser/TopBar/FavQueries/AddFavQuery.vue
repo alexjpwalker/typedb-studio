@@ -21,7 +21,7 @@
   export default {
     name: 'AddFavQuery',
     components: { ToolTip },
-    props: ['currentQuery', 'currentKeyspace', 'showAddFavQueryToolTip', 'favQueries'],
+    props: ['currentQuery', 'currentDatabase', 'showAddFavQueryToolTip', 'favQueries'],
     data() {
       return {
         currentQueryName: '',
@@ -54,7 +54,7 @@
           FavQueriesSettings.addFavQuery(
             this.currentQueryName,
             this.currentQuery,
-            this.currentKeyspace,
+            this.currentDatabase,
           );
           this.$emit('refresh-queries');
           this.currentQueryName = '';

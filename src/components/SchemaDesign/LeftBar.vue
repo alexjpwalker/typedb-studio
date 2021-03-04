@@ -62,17 +62,17 @@
       // computed
       this.$options.computed = {
         ...(this.$options.computed || {}),
-        ...mapGetters(['currentKeyspace']),
+        ...mapGetters(['currentDatabase']),
       };
     },
     watch: {
-      currentKeyspace() {
+      currentDatabase() {
         this.showPanel = undefined;
       },
     },
     methods: {
       togglePanel(panel) {
-        if (!this.currentKeyspace) this.$emit('keyspace-not-selected');
+        if (!this.currentDatabase) this.$emit('database-not-selected');
         else this.showPanel = panel;
       },
     },

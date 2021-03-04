@@ -3,35 +3,35 @@ import storage from '@/components/shared/PersistentStorage';
 const QUERIES_LS_KEY = 'fav_queries';
 
 export default {
-  getFavQueries(currentKeyspace) {
+  getFavQueries(currentDatabase) {
     const queries = storage.get(QUERIES_LS_KEY);
 
     if (queries == null) {
-      storage.set(QUERIES_LS_KEY, JSON.stringify({ [currentKeyspace]: {} }));
+      storage.set(QUERIES_LS_KEY, JSON.stringify({ [currentDatabase]: {} }));
       return {};
     }
 
     const queriesObject = JSON.parse(queries);
-    // If there is not object associated to the current keyspace we return empty object
-    if (!(currentKeyspace in queriesObject)) {
+    // If there is not object associated to the current database we return empty object
+    if (!(currentDatabase in queriesObject)) {
       return {};
     }
-    return queriesObject[currentKeyspace];
+    return queriesObject[currentDatabase];
   },
-  addFavQuery(queryName, queryValue, currentKeyspace) {
-    const queries = this.getFavQueries(currentKeyspace);
+  addFavQuery(queryName, queryValue, currentDatabase) {
+    const queries = this.getFavQueries(currentDatabase);
 
     queries[queryName] = queryValue;
-    this.setFavQueries(queries, currentKeyspace);
+    this.setFavQueries(queries, currentDatabase);
   },
-  removeFavQuery(queryName, currentKeyspace) {
-    const queries = this.getFavQueries(currentKeyspace);
+  removeFavQuery(queryName, currentDatabase) {
+    const queries = this.getFavQueries(currentDatabase);
     delete queries[queryName];
-    this.setFavQueries(queries, currentKeyspace);
+    this.setFavQueries(queries, currentDatabase);
   },
-  setFavQueries(queriesParam, currentKeyspace) {
+  setFavQueries(queriesParam, currentDatabase) {
     const queries = JSON.parse(storage.get(QUERIES_LS_KEY));
-    Object.assign(queries, { [currentKeyspace]: queriesParam });
+    Object.assign(queries, { [currentDatabase]: queriesParam });
     storage.set(QUERIES_LS_KEY, JSON.stringify(queries));
   },
 };

@@ -180,7 +180,7 @@ span.bp3-icon::before {
   stroke: var(--gray-4) !important;
 }
 
-.keyspace-btn {
+.database-btn {
   border: 1px solid var(--button-hover-border-color) !important;
 }
 
@@ -195,7 +195,7 @@ span.bp3-icon::before {
   margin: 0px;
 }
 
-.new-keyspace-btn {
+.new-database-btn {
   margin: 0px !important;
   margin-left: 10px !important;
 }

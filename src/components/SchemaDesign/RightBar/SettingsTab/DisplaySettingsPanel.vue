@@ -5,8 +5,8 @@
             <h1>Display Settings</h1>
         </div>
         <div v-show="showConceptDisplayContent">
-            <div class="panel-content" v-if="!currentKeyspace">
-                Please select a keyspace
+            <div class="panel-content" v-if="!currentDatabase">
+                Please select a database
             </div>
 
             <div class="panel-content" v-else>
@@ -49,7 +49,7 @@
       // computed
       this.$options.computed = {
         ...(this.$options.computed || {}),
-        ...mapGetters(['currentKeyspace', 'visFacade']),
+        ...mapGetters(['currentDatabase', 'visFacade']),
       };
     },
     watch: {

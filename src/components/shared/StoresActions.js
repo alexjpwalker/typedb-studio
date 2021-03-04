@@ -35,4 +35,4 @@ export const ADD_ATTRIBUTE_TYPE = 'add-attribute-types';
 export const UPDATE_METATYPE_INSTANCES = 'update-metatype-instances';
 export const INITIALISE_VISUALISER = 'initialise-visualiser';
 export const CANVAS_RESET = 'canvas-reset';
-export const CURRENT_KEYSPACE_CHANGED = 'current-keyspace-changed';
+export const CURRENT_DATABASE_CHANGED = 'current-database-changed';

@@ -6,9 +6,9 @@
             <button @click="toggleTypesContainer" class="btn types-container-btn"><vue-icon icon="locate" className="vue-icon"></vue-icon></button>
         </div>
     <div class="center">
-        <div class="center-wrapper" v-bind:style="[!currentKeyspace ? {opacity: 0.5} : {opacity: 1}]">
+        <div class="center-wrapper" v-bind:style="[!currentDatabase ? {opacity: 0.5} : {opacity: 1}]">
             <div class="column" v-bind:style="[(editorLinesNumber === 1) ? {'margin-bottom': '10px'} : {'margin-bottom': '0px'}]">
-                <div @click="!currentKeyspace ? $emit('keyspace-not-selected') : null" class="row">
+                <div @click="!currentDatabase ? $emit('database-not-selected') : null" class="row">
                     <tool-tip class="editor-tooltip" :isOpen="showEditorToolTip" msg="Type a query" arrowPosition="top" v-on:close-tooltip="showEditorToolTip = false"></tool-tip>
                     <textarea id="graqlEditor" ref="graqlEditor" rows="3"></textarea>
                     <div v-if="showEditorTab" class="editor-tab">
@@ -23,7 +23,7 @@
             <add-fav-query
                     v-if="showAddFavQuery"
                     :currentQuery="currentQuery"
-                    :currentKeyspace="currentKeyspace"
+                    :currentDatabase="currentDatabase"
                     :favQueries="favQueries"
                     :showAddFavQueryToolTip="showAddFavQueryToolTip"
                     v-on:close-add-query-panel="toggleAddFavQuery"
@@ -203,7 +203,7 @@ export default {
     // computed
     this.$options.computed = {
       ...(this.$options.computed || {}),
-      ...mapGetters(['currentKeyspace', 'currentQuery', 'showSpinner']),
+      ...mapGetters(['currentDatabase', 'currentQuery', 'showSpinner']),
     };
 
     // methods
@@ -224,9 +224,9 @@ export default {
       // Set the cursor at the end of existing content
       this.codeMirror.setCursor(this.codeMirror.lineCount(), 0);
     },
-    currentKeyspace(keyspace) {
+    currentDatabase(database) {
       this.refreshFavQueries();
-      if (keyspace) {
+      if (database) {
         this.codeMirror.setOption('readOnly', false);
       }
       this.history.clearHistory();
@@ -269,7 +269,7 @@ export default {
   },
   methods: {
     runQuery(event) {
-      if (!this.currentKeyspace) this.$emit('keyspace-not-selected');
+      if (!this.currentDatabase) this.$emit('database-not-selected');
       else if (!this.currentQuery.length) {
         if (event.stopPropagation) event.stopPropagation(); // to prevent event propogation to graql editor tooltip
         this.showEditorToolTip = true;
@@ -294,7 +294,7 @@ export default {
       if (this.editorMinimized) this.maximizeEditor();
     },
     async clearGraph() {
-      if (!this.currentKeyspace) this.$emit('keyspace-not-selected');
+      if (!this.currentDatabase) this.$emit('database-not-selected');
       else if (this.showSpinner) this.$notifyInfo('Please wait for action to complete');
       else {
         this[CANVAS_RESET]();
@@ -305,8 +305,8 @@ export default {
       this.showAddFavQuery = !this.showAddFavQuery;
     },
     toggleFavQueriesList(event) {
-      if (!this.currentKeyspace) {
-        this.$emit('keyspace-not-selected');
+      if (!this.currentDatabase) {
+        this.$emit('database-not-selected');
       } else if (!this.favQueries.length) {
         if (event.stopPropagation) event.stopPropagation(); // to prevent event propogation to fav query tooltip
         this.showEditorTab = true;
@@ -317,7 +317,7 @@ export default {
       }
     },
     toggleTypesContainer() {
-      if (!this.currentKeyspace) this.$emit('keyspace-not-selected');
+      if (!this.currentDatabase) this.$emit('database-not-selected');
       else {
         if (this.showFavQueriesList) this.showFavQueriesList = false;
         this.showTypesContainer = !this.showTypesContainer;
@@ -325,7 +325,7 @@ export default {
     },
     refreshFavQueries() {
       this.favQueries = this.objectToArray(
-        FavQueriesSettings.getFavQueries(this.currentKeyspace),
+        FavQueriesSettings.getFavQueries(this.currentDatabase),
       );
     },
     objectToArray(object) {

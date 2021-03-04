@@ -1,6 +1,6 @@
 export default {
-  currentKeyspace(state, keyspace) {
-    state.currentKeyspace = keyspace;
+  currentDatabase(state, database) {
+    state.currentDatabase = database;
   },
   loadingSchema(state, isRunning) {
     state.loadingSchema = isRunning;

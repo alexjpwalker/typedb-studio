@@ -12,7 +12,7 @@ const debug = process.env.NODE_ENV !== 'production';
 
 export default new Vuex.Store({
   state: {
-    keyspaces: undefined,
+    databases: undefined,
     credentials: undefined,
     isAuthenticated: undefined,
     landingPage: undefined,
@@ -26,8 +26,8 @@ export default new Vuex.Store({
     setIsGraknRunning(state, isGraknRunning) {
       state.isGraknRunning = isGraknRunning;
     },
-    setKeyspaces(state, list) {
-      state.keyspaces = list;
+    setDatabases(state, list) {
+      state.databases = list;
     },
     setCredentials(state, credentials) {
       state.credentials = credentials;

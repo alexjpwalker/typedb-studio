@@ -7,7 +7,7 @@ export default {
       metaTypeInstances: {},
       visStyle: VisStyle,
       visFacade: undefined,
-      currentKeyspace: null,
+      currentDatabase: null,
       selectedNodes: null,
       loadingQuery: false,
       canvasData: { entities: 0, attributes: 0, relations: 0 },

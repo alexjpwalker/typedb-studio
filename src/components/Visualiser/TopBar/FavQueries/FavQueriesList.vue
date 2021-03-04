@@ -151,7 +151,7 @@
       // computed
       this.$options.computed = {
         ...(this.$options.computed || {}),
-        ...mapGetters(['currentKeyspace']),
+        ...mapGetters(['currentDatabase']),
       };
 
       // methods
@@ -177,7 +177,7 @@
         this.setCurrentQuery(query);
       },
       removeFavQuery(index, queryName) {
-        FavQueriesSettings.removeFavQuery(queryName, this.currentKeyspace);
+        FavQueriesSettings.removeFavQuery(queryName, this.currentDatabase);
         this.$emit('refresh-queries');
         this.codeMirror[index].toTextArea(); // Remove codemirror instance
         this.$notifyInfo(`Query ${queryName} has been deleted from saved queries.`);
@@ -202,7 +202,7 @@
         FavQueriesSettings.addFavQuery(
           queryName,
           this.codeMirror[index].getValue(),
-          this.currentKeyspace,
+          this.currentDatabase,
         );
         this.$emit('refresh-queries');
         this.isEditable = null;

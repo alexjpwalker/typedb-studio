@@ -2,8 +2,8 @@ export default {
   setCurrentQuery(state, query) {
     state.currentQuery = query;
   },
-  currentKeyspace(state, keyspace) {
-    state.currentKeyspace = keyspace;
+  currentDatabase(state, database) {
+    state.currentDatabase = database;
   },
   loadingQuery(state, isRunning) {
     state.loadingQuery = isRunning;

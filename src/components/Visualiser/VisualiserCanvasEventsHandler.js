@@ -48,8 +48,8 @@ export default {
     commit('registerCanvasEvent', {
       event: 'oncontext',
       callback: (params) => {
-        // Show context menu when keyspace is selected and canvas has data
-        if (state.currentKeyspace && (state.canvasData.entities || state.canvasData.attributes || state.canvasData.relations)) {
+        // Show context menu when database is selected and canvas has data
+        if (state.currentDatabase && (state.canvasData.entities || state.canvasData.attributes || state.canvasData.relations)) {
           commit('setContextMenu', { show: true, x: params.pointer.DOM.x, y: params.pointer.DOM.y });
         }
       },

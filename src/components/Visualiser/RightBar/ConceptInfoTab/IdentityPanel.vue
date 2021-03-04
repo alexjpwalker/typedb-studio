@@ -5,8 +5,8 @@
             <h1>Identity</h1>
         </div>
         <div v-show="showConceptInfoContent">
-            <div class="content noselect" v-if="!currentKeyspace">
-                Please select a keyspace
+            <div class="content noselect" v-if="!currentDatabase">
+                Please select a database
             </div>
             <div class="content noselect" v-else-if="!(selectedNodes && selectedNodes.length === 1)">
                 Please select a node
@@ -46,7 +46,7 @@
       // computed
       this.$options.computed = {
         ...(this.$options.computed || {}),
-        ...mapGetters(['currentKeyspace', 'selectedNodes']),
+        ...mapGetters(['currentDatabase', 'selectedNodes']),
       };
     },
     computed: {

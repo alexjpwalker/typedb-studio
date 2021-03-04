@@ -2,18 +2,18 @@ import storage from '@/components/shared/PersistentStorage';
 
 
 function getPreferencesMap() {
-  let loadedMap = storage.get('keyspaces-preferences');
+  let loadedMap = storage.get('databases-preferences');
 
   if (loadedMap) {
     loadedMap = JSON.parse(loadedMap);
   } else {
     loadedMap = {};
-    storage.set('keyspaces-preferences', '{}');
+    storage.set('databases-preferences', '{}');
   }
   return loadedMap;
 }
 
-function emptyKeyspaceMap() {
+function emptyDatabaseMap() {
   return {
     label: {},
     colour: {},
@@ -23,36 +23,36 @@ function emptyKeyspaceMap() {
 
 // Getter and setter for preferences map
 
-function getMap(keyspace) {
+function getMap(database) {
   const prefMap = getPreferencesMap();
-  if (keyspace in prefMap) {
-    return prefMap[keyspace];
+  if (database in prefMap) {
+    return prefMap[database];
   }
-  // If current keyspace does not have preferences map create one
-  prefMap[keyspace] = emptyKeyspaceMap();
-  storage.set('keyspaces-preferences', JSON.stringify(prefMap));
-  return prefMap[keyspace];
+  // If current database does not have preferences map create one
+  prefMap[database] = emptyDatabaseMap();
+  storage.set('databases-preferences', JSON.stringify(prefMap));
+  return prefMap[database];
 }
 
 
-function flushMap(keyspace, map) {
-  const fullMap = JSON.parse(storage.get('keyspaces-preferences'));
-  fullMap[keyspace] = map;
-  storage.set('keyspaces-preferences', JSON.stringify(fullMap));
+function flushMap(database, map) {
+  const fullMap = JSON.parse(storage.get('databases-preferences'));
+  fullMap[database] = map;
+  storage.set('databases-preferences', JSON.stringify(fullMap));
 }
 
 // Labels on types
 
 function getTypeLabels(type) {
-  const keyspace = storage.get('current_keyspace_data');
-  const map = getMap(keyspace);
+  const database = storage.get('current_database_data');
+  const map = getMap(database);
   return map.label[type] || [];
 }
 
 
 function toggleLabelByType({ type, attribute }) {
-  const keyspace = storage.get('current_keyspace_data');
-  const map = getMap(keyspace);
+  const database = storage.get('current_database_data');
+  const map = getMap(database);
 
   // Create map for current type if it does not exist
   if (!map.label[type]) {
@@ -66,18 +66,18 @@ function toggleLabelByType({ type, attribute }) {
   } else { // If map does not include current type - add it
     map.label[type].push(attribute);
   }
-  flushMap(keyspace, map);
+  flushMap(database, map);
 }
 
 function getTypeColours(type) {
-  const keyspace = storage.get('current_keyspace_data');
-  const map = getMap(keyspace);
+  const database = storage.get('current_database_data');
+  const map = getMap(database);
   return map.colour[type] || [];
 }
 
 function toggleColourByType({ type, colourString }) {
-  const keyspace = storage.get('current_keyspace_data');
-  const map = getMap(keyspace);
+  const database = storage.get('current_database_data');
+  const map = getMap(database);
 
   // Create map for current type if it does not exist
   if (!map.colour[type]) {
@@ -92,7 +92,7 @@ function toggleColourByType({ type, colourString }) {
   } else { // If map does not include current type - add it
     map.colour[type] = colourString;
   }
-  flushMap(keyspace, map);
+  flushMap(database, map);
 }
 
 

@@ -20,32 +20,32 @@
                 </div>
             </div>
 
-            <div class="keyspaces-container">
+            <div class="databases-container">
                 <div class="container-title">
-                    Keyspaces
+                    Databases
                 </div>
-                <div class="keyspaces-content">
+                <div class="databases-content">
                     
-                    <div class="keyspaces-list">
-                        <div class="keyspace-item" :class="(index % 2) ? 'even' : 'odd'" v-for="(ks,index) in allKeyspaces" :key="index">
-                            <div class="keyspace-label">
+                    <div class="databases-list">
+                        <div class="database-item" :class="(index % 2) ? 'even' : 'odd'" v-for="(ks,index) in allDatabases" :key="index">
+                            <div class="database-label">
                                 {{ks}}
                             </div>
-                            <div class="right-side delete-keyspace-btn" @click="deleteKeyspace(ks)" >
+                            <div class="right-side delete-database-btn" @click="deleteDatabase(ks)" >
                                 <vue-icon icon="trash" className="vue-icon delete-icon" iconSize="14"></vue-icon>
                             </div>
                         </div>
                     </div>
-                    <div class="new-keyspace">
-                        <input class="input keyspace-input" v-model="keyspaceName" placeholder="Keyspace name">
-                        <loading-button v-on:clicked="addNewKeyspace" text="Create New Keyspace" className="btn new-keyspace-btn" :loading="loadSpinner"></loading-button>
+                    <div class="new-database">
+                        <input class="input database-input" v-model="databaseName" placeholder="Database name">
+                        <loading-button v-on:clicked="addNewDatabase" text="Create New Database" className="btn new-database-btn" :loading="loadSpinner"></loading-button>
                     </div>
                 </div>
             </div>
 
 
             <div class="logout-container" v-if="userLogged">
-                <div class="keyspaces-content">
+                <div class="databases-content">
                     <button class="btn" @click="logout">Logout</button>
 
                 </div>
@@ -59,18 +59,18 @@
         background-color:var(--gray-1);
     }
 
-    .keyspace-input {
+    .database-input {
         width: 100%;
     }
 
-    .new-keyspace {
+    .new-database {
         display: flex;
         align-items: center;
         width: 100%;
         padding-top: var(--container-padding);
     }
 
-    .keyspaces-list {
+    .databases-list {
         display: flex;
         flex-direction: column;
         width: 100%;
@@ -79,15 +79,15 @@
         overflow: auto;
     }
 
-    .keyspaces-list::-webkit-scrollbar {
+    .databases-list::-webkit-scrollbar {
         width: 2px;
     }
 
-    .keyspaces-list::-webkit-scrollbar-thumb {
+    .databases-list::-webkit-scrollbar-thumb {
         background: var(--green-4);
     }
 
-    .keyspace-item {
+    .database-item {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -95,7 +95,7 @@
         min-height: 30px;
     }
 
-    .keyspaces-content {
+    .databases-content {
         padding: var(--container-padding);
         display: flex;
         flex-direction: column;
@@ -139,7 +139,7 @@
         border-bottom: var(--container-darkest-border);
     }
 
-    .keyspaces-container {
+    .databases-container {
         padding: var(--container-padding);
         width: 100%;
         border-bottom: var(--container-darkest-border);
@@ -188,7 +188,7 @@ export default {
       serverHost: Settings.getServerHost(),
       serverPort: Settings.getServerPort(),
       connectionTest: '',
-      keyspaceName: '',
+      databaseName: '',
       loadSpinner: false,
     };
   },
@@ -202,7 +202,7 @@ export default {
     this.connectionTest = (this.isGraknRunning) ? 'Valid' : 'Invalid';
   },
   computed: {
-    ...mapGetters(['isGraknRunning', 'allKeyspaces', 'userLogged']),
+    ...mapGetters(['isGraknRunning', 'allDatabases', 'userLogged']),
   },
   watch: {
     serverHost(newVal) {
@@ -222,19 +222,19 @@ export default {
       this.connectionTest = 'testing';
       this.$store.dispatch('initGrakn');
     },
-    addNewKeyspace() {
-      if (!this.keyspaceName.length) return;
+    addNewDatabase() {
+      if (!this.databaseName.length) return;
       this.loadSpinner = true;
-      this.$store.dispatch('createKeyspace', this.keyspaceName)
-        .then(() => { this.$notifyInfo(`New keyspace, ${this.keyspaceName}, successfully created!`); })
-        .catch((error) => { this.$notifyError(error, 'Create keyspace'); })
-        .then(() => { this.loadSpinner = false; this.keyspaceName = ''; this.showNewKeyspacePanel = false; });
+      this.$store.dispatch('createDatabase', this.databaseName)
+        .then(() => { this.$notifyInfo(`New database, ${this.databaseName}, successfully created!`); })
+        .catch((error) => { this.$notifyError(error, 'Create database'); })
+        .then(() => { this.loadSpinner = false; this.databaseName = ''; this.showNewDatabasePanel = false; });
     },
-    deleteKeyspace(keyspace) {
-      this.$notifyConfirmDelete(`Are you sure you want to delete ${keyspace} keyspace?`,
-        () => this.$store.dispatch('deleteKeyspace', keyspace)
-          .then(() => this.$notifyInfo(`Keyspace, ${keyspace}, successfully deleted!`))
-          .catch((error) => { this.$notifyError(error, 'Delete keyspace'); }));
+    deleteDatabase(database) {
+      this.$notifyConfirmDelete(`Are you sure you want to delete ${database} database?`,
+        () => this.$store.dispatch('deleteDatabase', database)
+          .then(() => this.$notifyInfo(`Database, ${database}, successfully deleted!`))
+          .catch((error) => { this.$notifyError(error, 'Delete database'); }));
     },
     async logout() {
       await this.$store.dispatch('logout');

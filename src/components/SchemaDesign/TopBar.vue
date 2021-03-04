@@ -9,7 +9,7 @@
         </div>
 
         <div class="right">
-            <keyspaces-handler :showKeyspaceTooltip="showKeyspaceToolTip" v-on:keyspace-selected="$emit('keyspace-selected')"></keyspaces-handler>
+            <databases-handler :showDatabaseTooltip="showDatabaseToolTip" v-on:database-selected="$emit('database-selected')"></databases-handler>
             <button class="btn" @click="$emit('toggle-preferences')"><vue-icon icon="cog" className="vue-icon"></vue-icon></button>
         </div>
     </div>
@@ -74,10 +74,10 @@
 </style>
 
 <script>
-    import KeyspacesHandler from '../shared/KeyspacesHandler.vue';
+    import DatabasesHandler from '../shared/DatabasesHandler.vue';
 
     export default {
-      components: { KeyspacesHandler },
-      props: ['showKeyspaceToolTip'],
+      components: { DatabasesHandler },
+      props: ['showDatabaseToolTip'],
     };
 </script>

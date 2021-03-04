@@ -1,7 +1,7 @@
 import {
   OPEN_GRAKN_TX,
   LOAD_SCHEMA,
-  CURRENT_KEYSPACE_CHANGED,
+  CURRENT_DATABASE_CHANGED,
   CANVAS_RESET,
   UPDATE_METATYPE_INSTANCES,
   INITIALISE_VISUALISER,
@@ -41,12 +41,12 @@ export default {
     return graknTx;
   },
 
-  async [CURRENT_KEYSPACE_CHANGED]({ state, dispatch, commit }, keyspace) {
-    if (keyspace !== state.currentKeyspace) {
+  async [CURRENT_DATABASE_CHANGED]({ state, dispatch, commit }, database) {
+    if (database !== state.currentDatabase) {
       dispatch(CANVAS_RESET);
-      commit('currentKeyspace', keyspace);
+      commit('currentDatabase', database);
       if (global.graknSession) await global.graknSession.close();
-      global.graknSession = await global.grakn.session(keyspace, SessionType.DATA);
+      global.graknSession = await global.grakn.session(database, SessionType.DATA);
       dispatch(UPDATE_METATYPE_INSTANCES);
       dispatch(LOAD_SCHEMA);
     }
