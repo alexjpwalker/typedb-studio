@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import { app, protocol, BrowserWindow, Menu } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS_DEVTOOLS } from 'electron-devtools-installer'
 import { initRenderer } from 'electron-store'
@@ -13,6 +13,48 @@ initRenderer();
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
 ])
+
+function buildApplicationMenu() {
+  const applicationSubmenu = [];
+  // The about window only works on Mac out-of-the-box - will need to implement custom for Windows/Linux
+  if (process.platform === 'darwin') {
+    applicationSubmenu.push({ label: 'About Grakn Workbase', selector: 'orderFrontStandardAboutPanel:' });
+    applicationSubmenu.push({ type: 'separator' });
+  }
+  applicationSubmenu.push({ label: 'Quit', accelerator: 'Command+Q', click() { app.quit(); } });
+  // Create the Application's main menu
+  const menuTemplate = [{
+    label: 'Application',
+    submenu: applicationSubmenu,
+  },
+    {
+      label: 'Edit',
+      submenu: [
+        { label: 'Undo', accelerator: 'CmdOrCtrl+Z', selector: 'undo:' },
+        { label: 'Redo', accelerator: 'Shift+CmdOrCtrl+Z', selector: 'redo:' },
+        { type: 'separator' },
+        { label: 'Cut', accelerator: 'CmdOrCtrl+X', selector: 'cut:' },
+        { label: 'Copy', accelerator: 'CmdOrCtrl+C', selector: 'copy:' },
+        { label: 'Paste', accelerator: 'CmdOrCtrl+V', selector: 'paste:' },
+        { label: 'Select All', accelerator: 'CmdOrCtrl+A', selector: 'selectAll:' },
+      ] },
+    {
+      label: 'View',
+      submenu: [
+        {
+          role: 'reload',
+        },
+        {
+          role: 'zoomin', accelerator: 'CmdOrCtrl+=',
+        },
+        {
+          role: 'zoomout',
+        }],
+    },
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate));
+}
 
 async function createWindow() {
   // Create the browser window.
@@ -33,6 +75,7 @@ async function createWindow() {
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
     if (!process.env.IS_TEST) win.webContents.openDevTools()
   } else {
+    buildApplicationMenu();
     createProtocol('app')
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
