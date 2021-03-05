@@ -33,7 +33,7 @@ const getConceptIdentifier = (concept) => {
 
 const edgeTypes = {
   type: {
-    HAS: 'HAS_TYPE',
+    OWNS: 'OWNS_TYPE',
     PLAYS: 'PLAYS_IN_TYPE',
     RELATES: 'RELATES_TO_TYPE',
     SUB: 'SUBS_TYPE',
@@ -86,8 +86,8 @@ const getEdge = (from, to, edgeType, label) => {
       edge.arrows = { to: { enabled: true } };
       edge.options = { hideLabel: false, hideArrow: false };
       break;
-    case edgeTypes.type.HAS:
-      edge.label = 'has';
+    case edgeTypes.type.OWNS:
+      edge.label = 'owns';
       edge.arrows = { to: { enabled: true } };
       edge.options = { hideLabel: false, hideArrow: false };
       break;
@@ -355,11 +355,11 @@ const getTypeAttributeEdges = async (type) => {
   if (sup) {
     const typesAttrs = await convertToRemote(type).getOwns().collect();
     if (sup.isRoot()) {
-      edges = typesAttrs.map(attr => getEdge(type, attr, edgeTypes.type.HAS));
+      edges = typesAttrs.map(attr => getEdge(type, attr, edgeTypes.type.OWNS));
     } else { // if type has a super type which is not a META_CONCEPT construct edges to attributes except those which are inherited from its super type
       const supAttrIds = (await convertToRemote(sup).getOwns().collect()).map(x => x.id);
       const supAttrs = typesAttrs.filter(attr => !supAttrIds.includes(attr.id));
-      edges = supAttrs.map(attr => getEdge(type, attr, edgeTypes.type.HAS));
+      edges = supAttrs.map(attr => getEdge(type, attr, edgeTypes.type.OWNS));
     }
   }
 
