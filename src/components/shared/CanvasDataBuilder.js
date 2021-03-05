@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 import QuerySettings from '../Visualiser/RightBar/SettingsTab/QuerySettings';
 import DisplaySettings from '../Visualiser/RightBar/SettingsTab/DisplaySettings';
-import { META_LABELS, baseTypes } from './SharedUtils';
+import {baseTypes, META_LABELS} from './SharedUtils';
 import store from '../../store';
 
 const convertToRemote = (concept) => {
@@ -12,10 +12,24 @@ const convertToRemote = (concept) => {
   return concept;
 };
 
-const { ENTITY_INSTANCE, RELATION_INSTANCE, ATTRIBUTE_INSTANCE, ENTITY_TYPE, RELATION_TYPE, ATTRIBUTE_TYPE } = baseTypes;
+const { ENTITY_INSTANCE, RELATION_INSTANCE, ATTRIBUTE_INSTANCE, THING_TYPE, ENTITY_TYPE, RELATION_TYPE, ATTRIBUTE_TYPE, ROLE_TYPE } = baseTypes;
 
 const collect = (array, current) => array.concat(current);
-const deduplicateConcepts = arr => arr.filter((item, index, self) => index === self.findIndex(t => t.concept.id === item.concept.id));
+const deduplicateConcepts = arr => arr.filter((item, index, self) => {
+  return index === self.findIndex(t => getConceptIdentifier(t.concept) === getConceptIdentifier(item.concept));
+});
+
+const getConceptIdentifier = (concept) => {
+  if (concept.isThing()) {
+    return concept.getIID();
+  } else if (concept.isRoleType()) {
+    return concept.getScopedLabel();
+  } else if (concept.isType()) {
+    return concept.getLabel();
+  } else {
+    throw "Unrecognised concept type: " + concept;
+  }
+}
 
 const edgeTypes = {
   type: {
@@ -32,22 +46,38 @@ const edgeTypes = {
   },
 };
 
-const getConceptLabel = (concept) => {
+const getThingBaseType = (thing) => {
+  if (thing.isEntity()) return ENTITY_INSTANCE;
+  else if (thing.isRelation()) return RELATION_INSTANCE;
+  else if (thing.isAttribute()) return ATTRIBUTE_INSTANCE;
+  else throw "Unrecognised instance type: " + thing;
+};
+
+const getTypeBaseType = (type) => {
+  if (type.isEntityType()) return ENTITY_TYPE;
+  else if (type.isRelationType()) return RELATION_TYPE;
+  else if (type.isAttributeType()) return ATTRIBUTE_TYPE;
+  else if (type.isRoleType()) return ROLE_TYPE;
+  else if (type.isThingType()) return THING_TYPE;
+  else throw "Unrecognised type encoding: " + type;
+}
+
+const getTypeLabel = (type) => {
   let label;
-  if (typeof concept.label === 'string') label = concept.label;
-  else if (concept.isType()) label = concept.label();
-  else if (concept.isThing()) label = concept.type().label();
+  if (type.isRoleType()) label = type.getScopedLabel();
+  else label = type.getLabel();
   return label;
 };
 
 const shouldVisualiseType = (type) => {
   let shouldSkip = false;
-  if (META_LABELS.has(getConceptLabel(type))) shouldSkip = true;
+  if (META_LABELS.has(getTypeLabel(type))) shouldSkip = true;
   return !shouldSkip;
 };
 
 const getEdge = (from, to, edgeType, label) => {
-  const edge = { from: from.id, to: to.id };
+  console.log({from, to, edgeType, label});
+  const edge = { from: getConceptIdentifier(from), to: getConceptIdentifier(to) };
 
   switch (edgeType) {
     // TYPES
@@ -129,19 +159,20 @@ const getNodeLabelWithAttrs = async (baseLabel, type, instance) => {
  * produces and returns the common node object for a concept instance
  * most node properties are available on the instance, but graqlVar and explanation
  * need to be passed to here for the ConceptMap that contained the instance
- * @param {Concept} instance guaranteed to be a concept instance
+ * @param {Thing} instance guaranteed to be a concept instance
  * @param {String} graqlVar
  * @param {ConceptMap[]} explanation
  */
 const buildCommonInstanceNode = async (instance, graqlVar, explanation) => {
   const node = {};
-  node.id = instance.id;
-  node.baseType = instance.baseType;
+  node.id = instance.getIID();
+  node.iid = instance.getIID();
+  node.baseType = getThingBaseType(instance);
   node.var = graqlVar;
   node.attrOffset = 0;
-  node.type = getConceptLabel(instance);
-  node.isInferred = await instance.isInferred();
-  node.attributes = convertToRemote(instance).attributes;
+  node.type = getTypeLabel(await convertToRemote(instance).getType());
+  node.isInferred = await convertToRemote(instance).isInferred();
+  node.attributes = await convertToRemote(instance).getHas();
   if (node.isInferred) {
     node.explanation = explanation;
   }
@@ -151,13 +182,14 @@ const buildCommonInstanceNode = async (instance, graqlVar, explanation) => {
 
 /**
  * produces and returns the node for the given concept instance based on is basetype
- * @param {Concept} instance guaranteed to be a concept instance
+ * @param {Thing} instance guaranteed to be a concept instance
  * @param {String} graqlVar
  * @param {ConceptMap[]} explanation
  */
 const getInstanceNode = async (instance, graqlVar, explanation) => {
   const node = await buildCommonInstanceNode(instance, graqlVar, explanation);
-  switch (instance.baseType) {
+  const baseType = getThingBaseType(instance);
+  switch (baseType) {
     case ENTITY_INSTANCE: {
       node.label = await getNodeLabelWithAttrs(`${node.type}: ${node.id}`, node.type, instance);
       break;
@@ -167,12 +199,12 @@ const getInstanceNode = async (instance, graqlVar, explanation) => {
       break;
     }
     case ATTRIBUTE_INSTANCE: {
-      node.value = await convertToRemote(instance).value();
+      node.value = instance.getValue();
       node.label = await getNodeLabelWithAttrs(`${node.type}: ${node.value}`, node.type, instance);
       break;
     }
     default:
-      throw new Error(`Instance type [${instance.baseType}] is not recoganised`);
+      throw new Error(`Instance type [${baseType}] is not recoganised`);
   }
 
   return node;
@@ -190,46 +222,48 @@ const getInstanceHasEdges = async (attribute) => {
 
 /**
  * produces the `role` edges from the given relation instance to its roleplayers
- * @param {Concept} relation must be a relation instance
+ * @param {Relation} relation
  */
 // eslint-disable-next-line no-unused-vars
 const getInstanceRelatesEdges = async (relation) => {
-  const rpMap = await convertToRemote(relation).rolePlayersMap();
+  const rpMap = await convertToRemote(relation).getPlayersByRoleType();
   const rpMapEntries = Array.from(rpMap.entries());
 
   const edges = (await Promise.all(
-    rpMapEntries.map(([role, players]) => role.label().then(label =>
-      Array.from(players.values()).reduce(collect, []).map(player => getEdge(relation, player, edgeTypes.instance.RELATES, label)),
+    rpMapEntries.map(([role, players]) =>
+      Array.from(players.values()).reduce(collect, []).map(player => getEdge(relation, player, edgeTypes.instance.RELATES, role.getLabel()),
     )))
   ).reduce(collect, []);
   return [edges];
 };
 
-const getInstanceIsaEdges = (instance) => {
-  const type = instance.type();
+const getInstanceIsaEdges = async (instance) => {
+  const type = await convertToRemote(instance).getType();
   return getEdge(instance, type, edgeTypes.instance.ISA);
 };
 
 /**
  * produces and returns the edges for the given concept instance
- * @param {Thing} instance must be a concept instance
+ * @param {Thing} thing
+ * @param existingNodeIds
  */
-const getInstanceEdges = async (instance, existingNodeIds) => {
+const getInstanceEdges = async (thing, existingNodeIds) => {
   const edges = [];
-  switch (instance.baseType) {
+  const baseType = getThingBaseType(thing);
+  switch (baseType) {
     case ATTRIBUTE_INSTANCE:
-      edges.push(getInstanceIsaEdges(instance));
-      edges.push(...await getInstanceHasEdges(instance));
+      edges.push(await getInstanceIsaEdges(thing));
+      edges.push(...await getInstanceHasEdges(thing));
       break;
     case RELATION_INSTANCE:
-      edges.push(getInstanceIsaEdges(instance));
-      edges.push(...await getInstanceRelatesEdges(instance));
+      edges.push(await getInstanceIsaEdges(thing));
+      edges.push(...await getInstanceRelatesEdges(thing));
       break;
     case ENTITY_INSTANCE:
-      edges.push(getInstanceIsaEdges(instance));
+      edges.push(await getInstanceIsaEdges(thing));
       break;
     default:
-      throw new Error(`Instance type [${instance.baseType}] is not recoganised`);
+      throw new Error(`Instance type [${baseType}] is not recognised`);
   }
 
   // exclude any edges that connect nodes which do not exist
@@ -272,23 +306,27 @@ const buildInstances = async (answers) => {
  * @param {Concept} type guaranteed to be a concept type
  * @param {String} graqlVar
  */
-const getTypeNode = (type, graqlVar) => {
+const getTypeNode = async (type, graqlVar) => {
   const node = {};
-  switch (type.baseType) {
+  const baseType = getTypeBaseType(type);
+  switch (baseType) {
     case ENTITY_TYPE:
     case RELATION_TYPE:
-    case ATTRIBUTE_TYPE: {
-      node.id = type.id;
-      node.baseType = type.baseType;
+    case ATTRIBUTE_TYPE:
+    case THING_TYPE:
+    case ROLE_TYPE: {
+      node.id = getTypeLabel(type);
+      node.label = getTypeLabel(type);
+      node.baseType = baseType;
       node.var = graqlVar;
       node.attrOffset = 0;
-      node.label = getConceptLabel(type);
-      node.attributes = type.attributes;
-      node.playing = type.playing;
+      node.typeLabel = getTypeLabel(type);
+      node.attributes = await convertToRemote(type).getOwns().collect();
+      node.playing = await convertToRemote(type).getPlays().collect();
       break;
     }
     default:
-      throw new Error(`Concept type [${type.baseType}] is not recoganised`);
+      throw new Error(`Concept type [${baseType}] is not recognised`);
   }
 
   return node;
@@ -300,7 +338,7 @@ const getTypeNode = (type, graqlVar) => {
  * @param {Concept} type must be a concept type
  */
 const getTypeSubEdge = async (type) => {
-  const sup = await convertToRemote(type).sup();
+  const sup = await convertToRemote(type).getSupertype();
   if (sup && sup.baseType !== 'META_TYPE') return [getEdge(type, sup, edgeTypes.type.SUB)];
   return [];
 };
@@ -313,14 +351,14 @@ const getTypeSubEdge = async (type) => {
 const getTypeAttributeEdges = async (type) => {
   let edges = [];
 
-  const sup = await convertToRemote(type).sup();
+  const sup = await convertToRemote(type).getSupertype();
 
   if (sup) {
-    const typesAttrs = await (await convertToRemote(type).attributes()).collect();
-    if (sup.baseType === 'META_TYPE') {
+    const typesAttrs = await convertToRemote(type).getOwns().collect();
+    if (sup.isRoot()) {
       edges = typesAttrs.map(attr => getEdge(type, attr, edgeTypes.type.HAS));
     } else { // if type has a super type which is not a META_CONCEPT construct edges to attributes except those which are inherited from its super type
-      const supAttrIds = (await (await sup.attributes()).collect()).map(x => x.id);
+      const supAttrIds = (await convertToRemote(sup).getOwns().collect()).map(x => x.id);
       const supAttrs = typesAttrs.filter(attr => !supAttrIds.includes(attr.id));
       edges = supAttrs.map(attr => getEdge(type, attr, edgeTypes.type.HAS));
     }
@@ -335,17 +373,11 @@ const getTypeAttributeEdges = async (type) => {
  * @param {Concept} type must be a concept type
  */
 const getTypePlayEdges = async (type) => {
-  const playRoles = await (await convertToRemote(type).playing()).collect();
-  const edges = (await Promise.all(playRoles.map(role =>
-    role.label().then(label =>
-      role.relations().then(relationsIterator =>
-        relationsIterator.collect().then(relations =>
-          relations.map(relation => getEdge(relation, type, edgeTypes.type.PLAYS, label)),
-        ),
-      ),
-    ),
+  const playRoles = await convertToRemote(type).getPlays().collect();
+  return (await Promise.all(playRoles.map(role =>
+    convertToRemote(role).getRelationTypes().collect().then(relations =>
+      relations.map(relation => getEdge(relation, type, edgeTypes.type.PLAYS, role.getLabel())))
   ))).reduce(collect, []);
-  return edges;
 };
 
 /**
@@ -353,30 +385,26 @@ const getTypePlayEdges = async (type) => {
  * @param {Concept} type must be a concept relation type
  */
 const getTypeRelatesEdges = async (type) => {
-  const roles = await (await convertToRemote(type).roles()).collect();
-  const edges = (await Promise.all(roles.map(role =>
-    role.label().then(label =>
-      role.players().then(playersIterator =>
-        playersIterator.collect().then(players =>
-          players.map(player => getEdge(type, player, edgeTypes.type.RELATES, label)),
-        ),
-      ),
-    ),
+  const roles = await convertToRemote(type).getRelates().collect();
+  return (await Promise.all(roles.map(role =>
+    convertToRemote(role).getPlayers().collect().then(players =>
+      players.map(player => getEdge(type, player, edgeTypes.type.RELATES, role.getLabel())))
   ))).reduce(collect, []);
-
-  return edges;
 };
 
 /**
  * produces and returns edges for the given type depending on its basetype
- * @param {Concept} type must be a concept type
+ * @param {Type} type must be a concept type
+ * @param existingNodeIds
  */
 const getTypeEdges = async (type, existingNodeIds) => {
   const edges = [];
 
-  switch (type.baseType) {
+  const baseType = getTypeBaseType(type);
+  switch (baseType) {
     case ENTITY_TYPE:
     case ATTRIBUTE_TYPE:
+    case THING_TYPE:
       edges.push(...await getTypeSubEdge(type));
       edges.push(...await getTypeAttributeEdges(type));
       edges.push(...await getTypePlayEdges(type));
@@ -388,7 +416,7 @@ const getTypeEdges = async (type, existingNodeIds) => {
       edges.push(...await getTypeRelatesEdges(type));
       break;
     default:
-      throw new Error(`Concept type [${type.baseType}] is not recoganised`);
+      throw new Error(`Concept type [${baseType}] is not recognised`);
   }
 
   // exclude any edges that connect nodes which do not exist
@@ -412,8 +440,7 @@ const buildTypes = async (answers) => {
     item.shouldVisualise = shouldVisualiseVals[index];
     return item;
   });
-
-  const nodes = data.filter(item => item.shouldVisualise).map(item => getTypeNode(item.concept, item.graqlVar));
+  const nodes = (await Promise.all(data.filter(item => item.shouldVisualise).map(item => getTypeNode(item.concept, item.graqlVar)))).reduce(collect, []);
   const nodeIds = nodes.map(node => node.id);
   const edges = (await Promise.all(data.filter(item => item.shouldVisualise).map(item => getTypeEdges(item.concept, nodeIds)))).reduce(collect, []);
 
@@ -426,12 +453,12 @@ const buildTypes = async (answers) => {
  * @param {*} graqlVar
  * @param {*} explanation
  */
-const getNeighbourNode = (concept, graqlVar, explanation) => {
+const getNeighbourNode = async (concept, graqlVar, explanation) => {
   let node;
   if (concept.isType()) {
-    node = getTypeNode(concept, graqlVar);
+    node = await getTypeNode(concept, graqlVar);
   } else if (concept.isThing()) {
-    node = getInstanceNode(concept, graqlVar, explanation);
+    node = await getInstanceNode(concept, graqlVar, explanation);
   }
   return node;
 };
@@ -479,9 +506,9 @@ const getNeighbourEdges = async (neighbourConcept, targetConcept, existingNodeId
 };
 
 /**
- * Produces and returns nodes and edges for the neihbours of the given targetNode
- * @param {*} targetNode the node that has been double clicked, whose neighbours are to be produced
- * @param {*} answers the untouched response of a transaction.query() that contains the neioghbour concepts of targetNode
+ * Produces and returns nodes and edges for the neighbours of the given targetNode
+ * @param {*} targetConcept the node that has been double clicked, whose neighbours are to be produced
+ * @param {*} answers the untouched response of a transaction.query() that contains the neighbour concepts of targetNode
  * @param {*} graknTx
  */
 const buildNeighbours = async (targetConcept, answers) => {
@@ -517,12 +544,12 @@ const buildNeighbours = async (targetConcept, answers) => {
 const updateNodesLabel = async (nodes) => {
   const updatedLabels = await Promise.all(nodes.map(async (node) => {
     const instance = await global.graknTx[store.getters.activeTab].getConcept(node.id);
-    const baseLabel = node.label.split('\n')[0];
+    const baseLabel = node.typeLabel.split('\n')[0];
     return getNodeLabelWithAttrs(baseLabel, node.type, instance);
   }));
 
   const updatedNodes = nodes.map((node, i) => {
-    node.label = updatedLabels[i];
+    node.typeLabel = updatedLabels[i];
     return node;
   });
 
@@ -551,24 +578,22 @@ const buildRPInstances = async (answers, currentData, shouldLimit, graknTx) => {
           targetRelationIds.push(relation.id);
 
           promises.push(new Promise((resolve) => {
-            relation.asRemote(graknTx).rolePlayersMap().then((rolePlayersMap) => {
+            relation.asRemote(graknTx).getPlayersByRoleType().then((rolePlayersMap) => {
               let rpEntries = Array.from(rolePlayersMap.entries());
               if (shouldLimit) rpEntries = rpEntries.slice(0, QuerySettings.getNeighboursLimit());
 
               let processedEntriesCount = 0;
               rpEntries.forEach(([role, players]) => {
-                role.label().then((edgeLabel) => {
-                  players.forEach((player) => {
-                    player.type().then(type => type.label().then((playerLabel) => {
-                      player.label = playerLabel;
-                      const edge = getEdge(relation, player, edgeTypes.instance.RELATES, edgeLabel);
-                      getInstanceNode(player, graqlVar, answer.explanation).then((node) => {
-                        edges.push(edge);
-                        nodes.push(node);
-                        processedEntriesCount += 1;
-                        if (processedEntriesCount === rpEntries.length) resolve({ edges, nodes });
-                      });
-                    }));
+                players.forEach((player) => {
+                  player.asRemote(graknTx).getType().then(type => {
+                    player.label = type.getLabel();
+                    const edge = getEdge(relation, player, edgeTypes.instance.RELATES, role.getLabel());
+                    getInstanceNode(player, graqlVar, answer.explanation).then((node) => {
+                      edges.push(edge);
+                      nodes.push(node);
+                      processedEntriesCount += 1;
+                      if (processedEntriesCount === rpEntries.length) resolve({ edges, nodes });
+                    });
                   });
                 });
               });

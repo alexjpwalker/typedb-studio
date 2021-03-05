@@ -30,11 +30,11 @@ import SchemaCanvasEventsHandler from '../SchemaCanvasEventsHandler';
 import CDB from '../../shared/CanvasDataBuilder';
 import { META_LABELS } from '../../shared/SharedUtils';
 import { Grakn } from "grakn-client/Grakn";
-const { SessionType } = Grakn;
+const { SessionType, TransactionType } = Grakn;
 
 export default {
   async [OPEN_GRAKN_TX]({ commit }) {
-    const graknTx = await global.graknSession.transaction().write();
+    const graknTx = await global.graknSession.transaction(TransactionType.WRITE);
     if (!global.graknTx) global.graknTx = {};
     global.graknTx.schemaDesign = graknTx;
     commit('setSchemaHandler', new SchemaHandler(graknTx));
@@ -205,7 +205,7 @@ export default {
 
     const node = state.visFacade.getNode(state.selectedNodes[0].id);
 
-    const ownerConcept = await graknTx.getSchemaConcept(node.label);
+    const ownerConcept = await graknTx.getSchemaConcept(node.typeLabel);
     const edges = await CDB.getTypeEdges(ownerConcept, state.visFacade.getAllNodes().map(n => n.id));
 
     state.visFacade.addToCanvas({ nodes: [], edges });
@@ -366,7 +366,7 @@ export default {
 
     const subs = await (await type.subs()).collect();
     await Promise.all(subs.map(async (x) => {
-      if (await x.label() !== payload.label) throw Error('Cannot delete sub-typed schema concept');
+      if (await x.label() !== payload.typeLabel) throw Error('Cannot delete sub-typed schema concept');
     }));
 
     if (await (await type.instances()).next()) throw Error('Cannot delete schema concept which has instances');
@@ -399,8 +399,8 @@ export default {
     } else if (payload.baseType === 'ATTRIBUTE_TYPE') {
       const nodes = state.visFacade.getAllNodes();
       await Promise.all(nodes.map(async (node) => {
-        await state.schemaHandler.deleteAttribute({ label: node.label, attributeLabel: payload.label });
-        node.attributes = node.attributes.filter((x => x.type !== payload.label));
+        await state.schemaHandler.deleteAttribute({ label: node.typeLabel, attributeLabel: payload.typeLabel });
+        node.attributes = node.attributes.filter((x => x.type !== payload.typeLabel));
       }));
       state.visFacade.updateNode(nodes);
     }

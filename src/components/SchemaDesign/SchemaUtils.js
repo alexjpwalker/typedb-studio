@@ -16,27 +16,27 @@ export function updateNodePositions(nodes) {
 
 export async function loadMetaTypeInstances(graknTx) {
   // Fetch types
-  const entities = await (await graknTx.query('match $x sub entity; get;')).collectConcepts();
-  const rels = await (await graknTx.query('match $x sub relation; get;')).collectConcepts();
-  const attributes = await (await graknTx.query('match $x sub attribute; get;')).collectConcepts();
-  const roles = await (await graknTx.query('match $x sub role; get;')).collectConcepts();
+  const rels = (await (await graknTx.query().match('match $x sub relation;')).collect()).map(cm => cm.get("x"));
+  const entities = (await (await graknTx.query().match('match $x sub entity;')).collect()).map(cm => cm.get("x"));
+  const attributes = (await (await graknTx.query().match('match $x sub attribute;')).collect()).map(cm => cm.get("x"));
+  const roles = (await (await graknTx.query().match('match $x sub relation:role;')).collect()).map(cm => cm.get("x"));
 
   // Get types labels
   const metaTypeInstances = {};
-  metaTypeInstances.entities = await Promise.all(entities.map(type => type.label()))
+  metaTypeInstances.entities = await Promise.all(entities.map(type => type.getLabel()))
     .then(labels => labels.filter(l => l !== 'entity')
       .concat()
       .sort());
-  metaTypeInstances.relations = await Promise.all(rels.map(async type => type.label()))
+  metaTypeInstances.relations = await Promise.all(rels.map(async type => type.getLabel()))
     .then(labels => labels.filter(l => l && l !== 'relation')
       .concat()
       .sort());
-  metaTypeInstances.attributes = await Promise.all(attributes.map(type => type.label()))
+  metaTypeInstances.attributes = await Promise.all(attributes.map(type => type.getLabel()))
     .then(labels => labels.filter(l => l !== 'attribute')
       .concat()
       .sort());
-  metaTypeInstances.roles = await Promise.all(roles.map(async type => type.label()))
-    .then(labels => labels.filter(l => l && l !== 'role')
+  metaTypeInstances.roles = await Promise.all(roles.map(async type => type.getScopedLabel()))
+    .then(labels => labels.filter(l => l && l !== 'relation:role')
       .concat()
       .sort());
   return metaTypeInstances;
@@ -45,7 +45,7 @@ export async function loadMetaTypeInstances(graknTx) {
 // attach attribute labels and data types to each node
 export async function computeAttributes(nodes, graknTx) {
   return Promise.all(nodes.map(async (node) => {
-    const concept = await graknTx.getSchemaConcept(node.label);
+    const concept = await graknTx.getSchemaConcept(node.typeLabel);
     const attributes = await (await concept.attributes()).collect();
     node.attributes = await Promise.all(attributes.map(async concept => ({ type: await concept.label(), valueType: await concept.valueType() })));
     return node;
@@ -55,7 +55,7 @@ export async function computeAttributes(nodes, graknTx) {
 // attach role labels to each node
 export async function computeRoles(nodes, graknTx) {
   return Promise.all(nodes.map(async (node) => {
-    const concept = await graknTx.getSchemaConcept(node.label);
+    const concept = await graknTx.getSchemaConcept(node.typeLabel);
     const roles = await (await concept.playing()).collect();
     node.roles = await Promise.all(roles.map(concept => concept.label())).then(nodes => nodes.filter(x => x));
     return node;

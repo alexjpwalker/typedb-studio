@@ -153,11 +153,9 @@
 
 <script>
 import { createNamespacedHelpers } from 'vuex';
-
 import $ from 'jquery';
 import Spinner from '@/components/UIElements/Spinner.vue';
 import { RUN_CURRENT_QUERY, CANVAS_RESET } from '@/components/shared/StoresActions';
-// import ImageDataURI from 'image-data-uri';
 import GraqlCodeMirror from './GraqlCodeMirror';
 import FavQueriesSettings from '../FavQueries/FavQueriesSettings';
 import { limitQuery } from '../../VisualiserUtils';
@@ -166,6 +164,8 @@ import TypesContainer from '../TypesContainer';
 import ErrorContainer from '../ErrorContainer';
 import AddFavQuery from '../FavQueries/AddFavQuery';
 import ToolTip from '../../../UIElements/ToolTip';
+import { Grakn } from "grakn-client/Grakn";
+const { TransactionType } = Grakn;
 
 
 export default {
@@ -298,7 +298,7 @@ export default {
       else if (this.showSpinner) this.$notifyInfo('Please wait for action to complete');
       else {
         this[CANVAS_RESET]();
-        global.graknTx[this.$store.getters.activeTab] = await global.graknSession.transaction().write();
+        global.graknTx[this.$store.getters.activeTab] = await global.graknSession.transaction(TransactionType.WRITE);
       }
     },
     toggleAddFavQuery() {

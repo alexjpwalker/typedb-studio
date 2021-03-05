@@ -3,7 +3,7 @@ import ServerSettings from '@/components/ServerSettings';
 
 export const loadDatabases = async (context) => {
   try {
-    const resp = await global.grakn.databases().retrieve();
+    const resp = await global.grakn.databases().all();
     context.commit('setIsGraknRunning', true);
     context.commit('setDatabases', resp);
   } catch (e) {

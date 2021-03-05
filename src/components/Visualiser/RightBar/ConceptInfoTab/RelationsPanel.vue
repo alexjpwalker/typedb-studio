@@ -37,7 +37,7 @@
                     </div>
                 </div>
 
-                <div v-if="showRolePLayers">
+                <div v-if="showRolePlayers">
                     <div v-for="rel in Array.from(relations.get(currentRole).keys())" :key="rel">
                         <div class="column">
                             <div class="row content-item">
@@ -57,7 +57,7 @@
                                 </div>
                             </div>
 
-                            <div v-if="showRolePLayers">
+                            <div v-if="showRolePlayers">
                                 <div class="roleplayers-list content-item" v-for="(rp, index) in relations.get(currentRole).get(rel)" :key="index">
                                     <div class="label role-label">
                                         {{rp.role}}
@@ -89,7 +89,7 @@
         showRolesList: false,
         currentRole: undefined,
         relations: undefined,
-        showRolePLayers: false,
+        showRolePlayers: false,
       };
     },
     beforeCreate() {
@@ -108,16 +108,17 @@
     },
     watch: {
       async selectedNodes() {
-        this.showRolePLayers = false;
+        this.showRolePlayers = false;
         // Initialise new relation map whenever a node is selected
         this.relations = new Map();
         this.currentRole = await this.loadRolesAndRelations();
       },
       async currentRole(currentRole) {
-        this.showRolePLayers = false;
+        this.showRolePlayers = false;
         // For each relation per role, compute all other role players
-        await Promise.all(Array.from(this.relations.get(currentRole).keys()).map(async (x) => { await this.loadOtherRolePlayers(x); }));
-        this.showRolePLayers = true;
+        // TODO: it's not clear what this does
+        // await Promise.all(Array.from(this.relations.get(currentRole).keys()).map(async (x) => { await this.loadOtherRolePlayers(x); }));
+        this.showRolePlayers = true;
       },
     },
     filters: {
@@ -139,56 +140,80 @@
         this.currentRole = role;
       },
       async loadRolesAndRelations() {
-        const node = await global.graknTx[this.$store.getters.activeTab].getConcept(this.selectedNodes[0].id);
-        const roles = await (await node.roles()).collect();
-
+        const node = this.selectedNodes[0];
+        const tx = global.graknTx[this.$store.getters.activeTab];
+        let roles;
+        if (node.iid) {
+          const thing = await tx.concepts().getThing(node.iid);
+          roles = await thing.asRemote(tx).getPlays().collect();
+        } else if (node.typeLabel) {
+          const thingType = await tx.concepts().getThingType(node.typeLabel);
+          roles = await thingType.asRemote(tx).getPlays().collect();
+        } else {
+          throw "Node must have either an IID or a Label";
+        }
         // Map roles to their respective relations which map to an empty array of other role players in that relation
         // Role => { Relation => [] }
-        await Promise.all(roles.map(async (x) => {
-          const roleLabel = await x.label();
+        for (const role of roles) {
+          const roleLabel = role.getScopedLabel();
           if (!(roleLabel in this.relations)) {
             this.relations.set(roleLabel, new Map());
-            (await Promise.all((await (await x.relations()).collect()).map(async rel => rel.label()))).forEach((x) => {
-              this.relations.get(roleLabel).set(x, []);
+            (await role.asRemote(tx).getRelationTypes().collect()).forEach((x) => {
+              this.relations.get(roleLabel).set(x.getLabel(), []);
             });
           }
-        }));
+        }
         return this.relations.keys().next().value;
       },
       async loadOtherRolePlayers(rel) {
+        // TODO: it's not clear what this is supposed to do
         // If roleplayers have not already been computed
-        if (!this.relations.get(this.currentRole).get(rel).length) {
-          const node = await global.graknTx[this.$store.getters.activeTab].getConcept(this.selectedNodes[0].id);
-          const roles = await (await node.roles()).collect();
-
-          // Get role concept of selected current role
-          const role = await (Promise.all(roles.map(async x => ((await x.label() === this.currentRole) ? x : null)))).then(roles => roles.filter(r => r));
-
-          // Get relation concepts of current role
-          let relations = await (await node.relations(...role[0])).collect();
-
-          // Filter relations
-          relations = await (Promise.all(relations.map(async x => ((await (await x.type()).label() === rel) ? x : null)))).then(rels => rels.filter(r => r));
-
-          // For every relation, map relations to their respective roleplayer and the role it plays
-          await Promise.all(relations.map(async (x) => {
-            let roleplayers = await x.rolePlayersMap();
-            roleplayers = Array.from(roleplayers.entries());
-
-            await Promise.all(Array.from(roleplayers, async ([role, setOfThings]) => {
-              const roleLabel = await role.label();
-              await Promise.all(Array.from(setOfThings.values())
-                .map(async (thing) => {
-                  const thingLabel = await (await thing.type()).label();
-
-                  // Do not include the current role
-                  if (thing.id !== this.selectedNodes[0].id && roleLabel !== this.currentRole) {
-                    this.relations.get(this.currentRole).get(rel).push({ role: roleLabel, player: `${thingLabel}: ${thing.id}` });
-                  }
-                }));
-            }));
-          }));
-        }
+        // if (!this.relations.get(this.currentRole).get(rel).length) {
+        //   const node = this.selectedNodes[0];
+        //   const tx = global.graknTx[this.$store.getters.activeTab];
+        //   let roles;
+        //
+        //   if (node.iid) {
+        //     const thing = await tx.concepts().getThing(node.iid);
+        //     roles = await thing.asRemote(tx).getPlays().collect();
+        //   } else if (node.typeLabel) {
+        //     const relationType = await tx.concepts().getRelationType(node.typeLabel);
+        //     roles = await relationType.asRemote(tx).getPlays().collect();
+        //   } else {
+        //     throw "Node must have either an IID or a Label";
+        //   }
+        //
+        //   console.log(roles);
+        //   // Get role concept of selected current role
+        //   const role = roles.find(r => r.getScopedLabel() === this.currentRole);
+        //
+        //   // Get relation concepts of current role
+        //   let relationTypes = await role.getRelationTypes().collect();
+        //
+        //   // Filter relations
+        //   relationTypes = await (Promise.all(relationTypes.map(async rel => {
+        //     return (((await rel.asRemote(tx).getType()).getLabel() === rel.getLabel()) ? rel : null);
+        //   }))).then(rels => rels.filter(r => r));
+        //
+        //   // For every relation, map relations to their respective roleplayer and the role it plays
+        //   await Promise.all(relationTypes.map(async (rel) => {
+        //     let roleplayers = await rel.getPlayersByRoleType();
+        //     roleplayers = Array.from(roleplayers.entries());
+        //
+        //     await Promise.all(Array.from(roleplayers, async ([role, setOfThings]) => {
+        //       const roleLabel = role.getLabel();
+        //       await Promise.all(Array.from(setOfThings.values())
+        //         .map(async (thing) => {
+        //           const thingLabel = (await thing.asRemote(tx).getType()).getLabel();
+        //
+        //           // Do not include the current role
+        //           if (thing.getIID() !== this.selectedNodes[0].iid && roleLabel !== this.currentRole) {
+        //             this.relations.get(this.currentRole).get(rel).push({ role: roleLabel, player: `${thingLabel}: ${thing.getIID()}` });
+        //           }
+        //         }));
+        //     }));
+        //   }));
+        // }
       },
     },
   };

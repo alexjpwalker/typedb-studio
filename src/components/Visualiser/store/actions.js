@@ -20,6 +20,7 @@ import {
   validateQuery,
   computeAttributes,
   getNeighbourAnswers,
+  getConcept
 } from '../VisualiserUtils';
 import QuerySettings from '../RightBar/SettingsTab/QuerySettings';
 import VisualiserGraphBuilder from '../VisualiserGraphBuilder';
@@ -27,7 +28,8 @@ import VisualiserCanvasEventsHandler from '../VisualiserCanvasEventsHandler';
 import CDB from '../../shared/CanvasDataBuilder';
 import { reopenTransaction } from '../../shared/SharedUtils';
 import { Grakn } from "grakn-client/Grakn";
-const { SessionType } = Grakn;
+import { GraknOptions } from "grakn-client/GraknOptions";
+const { SessionType, TransactionType } = Grakn;
 
 
 const collect = (array, current) => array.concat(current);
@@ -56,7 +58,7 @@ export default {
       // eslint-disable-next-line no-prototype-builtins
       if (!global.graknTx) global.graknTx = {};
       if (global.graknTx[rootState.activeTab]) global.graknTx[rootState.activeTab].close();
-      global.graknTx[rootState.activeTab] = await global.graknSession.transaction().write();
+      global.graknTx[rootState.activeTab] = await global.graknSession.transaction(TransactionType.WRITE);
       dispatch(UPDATE_METATYPE_INSTANCES);
     }
   },
@@ -97,7 +99,7 @@ export default {
       };
 
       const neighbourAnswers = await getNeighbourAnswers(visNode, currentData.edges, graknTx);
-      const targetConcept = await graknTx.getConcept(visNode.id);
+      const targetConcept = await getConcept(visNode, graknTx);
       const data = await CDB.buildNeighbours(targetConcept, neighbourAnswers);
 
       currentData.nodes.push(...data.nodes);
@@ -131,27 +133,30 @@ export default {
     try {
       commit('setGlobalErrorMsg', '');
       const query = state.currentQuery;
-      validateQuery(query);
+      // TODO: fix query validation
+      // validateQuery(query);
 
       commit('loadingQuery', true);
       const graknTx = global.graknTx[rootState.activeTab];
-      const result = await (await graknTx.query(query, { explain: true })).collect();
+      const options = new GraknOptions().setExplain(true);
+      const result = await (await graknTx.query().match(query, options)).collect();
       if (!result.length) {
         commit('loadingQuery', false);
         return null;
       }
 
       const queryTypes = {
-        GET: 'get',
+        MATCH: 'match',
         PATH: 'compute path',
       };
 
       // eslint-disable-next-line no-prototype-builtins
-      const queryType = (result[0].hasOwnProperty('map') ? queryTypes.GET : queryTypes.PATH);
+      // const queryType = (result[0].hasOwnProperty('map') ? queryTypes.GET : queryTypes.PATH);
+      const queryType = queryTypes.MATCH;
 
       let nodes = [];
       const edges = [];
-      if (queryType === queryTypes.GET) {
+      if (queryType === queryTypes.MATCH) {
         const shouldLoadRPs = QuerySettings.getRolePlayersStatus();
         const shouldLimit = true;
 
@@ -203,7 +208,7 @@ export default {
       const query = `match $x id ${visNode.id}, has attribute $y; get $y; offset ${visNode.attrOffset}; limit ${neighboursLimit};`;
       state.visFacade.updateNode({ id: visNode.id, attrOffset: visNode.attrOffset + neighboursLimit });
 
-      const result = await (await graknTx.query(query)).collect();
+      const result = await (await graknTx.query().match(query)).collect();
 
       const shouldLoadRPs = QuerySettings.getRolePlayersStatus();
       const shouldLimit = true;

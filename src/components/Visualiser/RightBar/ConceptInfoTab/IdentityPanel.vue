@@ -12,13 +12,17 @@
                 Please select a node
             </div>
             <div class="content" v-else>
-                <div class="content-item">
-                    <h1 class="label">ID:</h1>
-                    <div class="value">{{conceptInfo.id}}</div>
+                <div class="content-item" v-if="conceptInfo.iid">
+                    <h1 class="label">Internal ID:</h1>
+                    <div class="value">{{conceptInfo.iid}}</div>
                 </div>
                 <div class="content-item" v-if="conceptInfo.type">
                     <h1 class="label">TYPE:</h1>
                     <div class="value">{{conceptInfo.type}}</div>
+                </div>
+                <div class="content-item" v-if="conceptInfo.typeLabel">
+                    <h1 class="label">LABEL:</h1>
+                    <div class="value">{{conceptInfo.typeLabel}}</div>
                 </div>
                 <div class="content-item">
                     <h1 class="label">BASE TYPE:</h1>
@@ -55,12 +59,12 @@
         const node = this.selectedNodes[0];
         if (node.baseType.includes('TYPE')) {
           return {
-            id: node.id,
+            typeLabel: node.typeLabel,
             baseType: node.baseType,
           };
         }
         return {
-          id: node.id,
+          iid: node.iid,
           type: node.type,
           baseType: (node.isInferred === true) ? `INFERRED_${node.baseType}` : node.baseType,
         };

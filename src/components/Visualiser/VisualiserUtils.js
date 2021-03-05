@@ -1,4 +1,5 @@
 import QuerySettings from './RightBar/SettingsTab/QuerySettings';
+
 const LETTER_G_KEYCODE = 71;
 
 export function limitQuery(query) {
@@ -26,59 +27,53 @@ export function limitQuery(query) {
  * `attributes` property of the node. the `attributes` property of the node is read to list the
  * attributes' label and value in the sidebar for the selected node.
  * @param {*} nodes nodes that are currently visualised in the graph
- * @param {*} graknTx
+ * @param {*} tx
  * @return array of node objects, where each object includes the `attributes` property
  */
-export async function computeAttributes(nodes, graknTx) {
-  const concepts = await Promise.all(nodes.map(node => graknTx.getConcept(node.id)));
-  const attrIters = await Promise.all(concepts.map(concept => concept.attributes()));
-  const attrGroups = await Promise.all(attrIters.map(iter => iter.collect()));
-
-  return Promise.all(attrGroups.map(async (attrGroup, i) => {
-    nodes[i].attributes = await Promise.all(attrGroup.map(attr => new Promise((resolve) => {
-      const attribute = {};
-      if (attr.isType()) {
-        attr.label().then((label) => {
-          attribute.type = label;
+export async function computeAttributes(nodes, tx) {
+  for (const node of nodes) {
+    if (node.typeLabel) {
+      const ownedAttrTypes = await (await tx.concepts().getThingType(node.typeLabel)).asRemote(tx).getOwns().collect();
+      node.attributes = ownedAttrTypes.map(attr => { return { typeLabel: attr.getLabel() }; });
+    } else if (node.iid) {
+      const ownedAttrs = await (await tx.concepts().getThing(node.id)).asRemote(tx).getHas().collect();
+      node.attributes = await Promise.all(ownedAttrs.map(attr => new Promise((resolve) => {
+        const attribute = { value: attr.getValue() };
+        attr.asRemote(tx).getType().then(type => {
+          attribute.type = type.getLabel();
           resolve(attribute);
         });
-      } else {
-        attr.type().then(type => type.label()).then((label) => {
-          attribute.type = label;
-          attr.value().then((value) => {
-            attribute.value = value;
-            resolve(attribute);
-          });
-        });
-      }
-    })));
-    return nodes[i];
-  }));
+      })));
+    } else {
+      throw "Node does not have a Label or an ID";
+    }
+  }
+  return nodes;
 }
 
 export async function loadMetaTypeInstances(graknTx) {
   // Fetch types
-  const rels = await (await graknTx.query('match $x sub relation; get;')).collectConcepts();
-  const entities = await (await graknTx.query('match $x sub entity; get;')).collectConcepts();
-  const attributes = await (await graknTx.query('match $x sub attribute; get;')).collectConcepts();
-  const roles = await (await graknTx.query('match $x sub role; get;')).collectConcepts();
+  const rels = (await (await graknTx.query().match('match $x sub relation;')).collect()).map(cm => cm.get("x"));
+  const entities = (await (await graknTx.query().match('match $x sub entity;')).collect()).map(cm => cm.get("x"));
+  const attributes = (await (await graknTx.query().match('match $x sub attribute;')).collect()).map(cm => cm.get("x"));
+  const roles = (await (await graknTx.query().match('match $x sub relation:role;')).collect()).map(cm => cm.get("x"));
 
   // Get types labels
   const metaTypeInstances = {};
-  metaTypeInstances.entities = await Promise.all(entities.map(type => type.label()))
+  metaTypeInstances.entities = await Promise.all(entities.map(type => type.getLabel()))
     .then(labels => labels.filter(l => l !== 'entity')
       .concat()
       .sort());
-  metaTypeInstances.relations = await Promise.all(rels.map(type => type.label()))
+  metaTypeInstances.relations = await Promise.all(rels.map(type => type.getLabel()))
     .then(labels => labels.filter(l => l && l !== 'relation')
       .concat()
       .sort());
-  metaTypeInstances.attributes = await Promise.all(attributes.map(type => type.label()))
+  metaTypeInstances.attributes = await Promise.all(attributes.map(type => type.getLabel()))
     .then(labels => labels.filter(l => l !== 'attribute')
       .concat()
       .sort());
-  metaTypeInstances.roles = await Promise.all(roles.map(type => type.label()))
-    .then(labels => labels.filter(l => l && l !== 'role')
+  metaTypeInstances.roles = await Promise.all(roles.map(type => type.getScopedLabel()))
+    .then(labels => labels.filter(l => l && l !== 'relation:role')
       .concat()
       .sort());
   return metaTypeInstances;
@@ -86,9 +81,9 @@ export async function loadMetaTypeInstances(graknTx) {
 
 export function validateQuery(query) {
   const trimmedQuery = query.trim();
-  const supportedQueryRgx = /(get[^;]*?;\s*offset\s+\d+\s*;\s*limit\s+\d+\s*;$)|(^compute path\b)/;
+  const supportedQueryRgx = /get[^;]*?;\s*offset\s+\d+\s*;\s*limit\s+\d+\s*;$/;
   if (!supportedQueryRgx.test(trimmedQuery)) {
-    throw new Error('At the moment, only `match get` and `compute path` queries are supported.');
+    throw new Error('At the moment, only `match` queries are supported.');
   }
 }
 
@@ -119,14 +114,14 @@ export async function getNeighbourAnswers(targetNode, currentEdges, graknTx) {
     case 'ENTITY_TYPE':
     case 'ATTRIBUTE_TYPE':
     case 'RELATION_TYPE': {
-      const targetTypeId = targetNode.id;
-      const query = `match $target-type id ${targetTypeId}; $neighbour-instance isa $target-type; get $neighbour-instance;`;
-      const iter = await graknTx.query(query);
+      const targetTypeLabel = targetNode.id;
+      const query = `match $target-type type ${targetTypeLabel}; $neighbour-instance isa $target-type; get $neighbour-instance;`;
+      const iter = graknTx.query().match(query);
 
       let answer = await iter.next();
       while (answer && answers.length !== neighboursLimit) {
-        const neighbourInstanceId = answer.map().get('neighbour-instance').id;
-        const edgeId = `${targetTypeId}-${neighbourInstanceId}-isa`;
+        const neighbourInstanceId = answer.map().get('neighbour-instance').getIID();
+        const edgeId = `${targetTypeLabel}-${neighbourInstanceId}-isa`;
         if (!isEdgeAlreadyVisualised(edgeId)) {
           answers.push(answer);
         }
@@ -137,13 +132,13 @@ export async function getNeighbourAnswers(targetNode, currentEdges, graknTx) {
     }
     case 'ENTITY': {
       const targetEntId = targetNode.id;
-      const query = `match $target-entity id ${targetEntId}; $neighbour-relation ($target-entity-role: $target-entity); get $neighbour-relation, $target-entity-role;`;
-      const iter = await graknTx.query(query);
+      const query = `match $target-entity iid ${targetEntId}; $neighbour-relation ($target-entity-role: $target-entity); get $neighbour-relation, $target-entity-role;`;
+      const iter = graknTx.query().match(query);
       let answer = await iter.next();
       while (answer && answers.length !== neighboursLimit) {
-        const targetEntRoleLabel = answer.map().get('target-entity-role').label();
+        const targetEntRoleLabel = answer.map().get('target-entity-role').getLabel();
         if (targetEntRoleLabel !== 'role') {
-          const neighbourRelId = answer.map().get('neighbour-relation').id;
+          const neighbourRelId = answer.map().get('neighbour-relation').getIID();
           const edgeId = `${neighbourRelId}-${targetEntId}-${targetEntRoleLabel}`;
           if (!isEdgeAlreadyVisualised(edgeId)) {
             answers.push(answer);
@@ -156,11 +151,11 @@ export async function getNeighbourAnswers(targetNode, currentEdges, graknTx) {
     }
     case 'ATTRIBUTE': {
       const targetAttrId = targetNode.id;
-      const query = `match $neighbour-owner has attribute $target-attribute; $target-attribute id ${targetAttrId}; get $neighbour-owner;`;
-      const iter = await graknTx.query(query);
+      const query = `match $neighbour-owner has attribute $target-attribute; $target-attribute iid ${targetAttrId}; get $neighbour-owner;`;
+      const iter = graknTx.query().match(query);
       let answer = await iter.next();
       while (answer && answers.length !== neighboursLimit) {
-        const neighbourOwnerId = answer.map().get('neighbour-owner').id;
+        const neighbourOwnerId = answer.map().get('neighbour-owner').getIID();
         const edgeId = `${neighbourOwnerId}-${targetAttrId}-has`;
         if (!isEdgeAlreadyVisualised(edgeId)) {
           answers.push(answer);
@@ -172,13 +167,13 @@ export async function getNeighbourAnswers(targetNode, currentEdges, graknTx) {
     }
     case 'RELATION': {
       const targetRelId = targetNode.id;
-      const query = `match $target-relation ($neighbour-role: $neighbour-player); $target-relation id ${targetRelId}; get $neighbour-player, $neighbour-role;`;
-      const iter = await graknTx.query(query);
+      const query = `match $target-relation ($neighbour-role: $neighbour-player); $target-relation iid ${targetRelId}; get $neighbour-player, $neighbour-role;`;
+      const iter = graknTx.query().match(query);
       let answer = await iter.next();
       while (answer && answers.length !== neighboursLimit) {
-        const neighbourRoleLabel = answer.map().get('neighbour-role').label();
+        const neighbourRoleLabel = answer.map().get('neighbour-role').getLabel();
         if (neighbourRoleLabel !== 'role') {
-          const neighbourRoleId = answer.map().get('neighbour-player').id;
+          const neighbourRoleId = answer.map().get('neighbour-player').getIID();
           const edgeId = `${targetRelId}-${neighbourRoleId}-${neighbourRoleLabel}`;
           if (!isEdgeAlreadyVisualised(edgeId)) {
             answers.push(answer);
@@ -194,4 +189,14 @@ export async function getNeighbourAnswers(targetNode, currentEdges, graknTx) {
   }
 
   return answers;
+}
+
+export async function getConcept(node, tx) {
+  if (node.iid) {
+    return await tx.concepts().getThing(node.iid);
+  } else if (node.typeLabel) {
+    return await tx.concepts().getThingType(node.typeLabel);
+  } else {
+    throw "Unable to get concept for node " + node;
+  }
 }
