@@ -10,7 +10,6 @@ thumbs.db
 coverage
 .nyc_output
 .idea
-package-lock.json
 yarn-error.log
 bazel-*
 .ijwb
