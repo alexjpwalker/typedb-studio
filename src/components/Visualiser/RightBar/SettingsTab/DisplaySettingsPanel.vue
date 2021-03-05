@@ -124,7 +124,7 @@
         this.loadColour();
       },
       node(node) {
-        if (node) this.currentType = node.type;
+        if (node) this.currentType = node.iid ? node.type : node.typeLabel;
       },
       colour(col) {
         this.setTypeColour(col.hex);
@@ -133,11 +133,11 @@
     methods: {
       async loadAttributeTypes() {
         if (!this.currentType) return;
-        const graknTx = global.graknTx[this.$store.getters.activeTab];
+        const tx = global.graknTx[this.$store.getters.activeTab];
 
-        const type = await graknTx.getSchemaConcept(this.currentType);
+        const type = await tx.concepts().getThingType(this.currentType);
 
-        this.nodeAttributes = await Promise.all((await (await type.attributes()).collect()).map(type => type.label()));
+        this.nodeAttributes = await Promise.all((await type.asRemote(tx).getOwns().collect()).map(type => type.getLabel()));
         this.nodeAttributes.sort();
         this.currentTypeSavedAttributes = DisplaySettings.getTypeLabels(this.currentType);
 
