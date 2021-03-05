@@ -76,7 +76,6 @@ const shouldVisualiseType = (type) => {
 };
 
 const getEdge = (from, to, edgeType, label) => {
-  console.log({from, to, edgeType, label});
   const edge = { from: getConceptIdentifier(from), to: getConceptIdentifier(to) };
 
   switch (edgeType) {

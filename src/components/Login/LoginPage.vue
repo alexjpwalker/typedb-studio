@@ -189,23 +189,8 @@ export default {
     },
   },
   async beforeCreate() {
-    const grakn = new GraknClient(ServerSettings.getServerUri() /*, { username: this.username, password: this.password } */);
-    await grakn.session('grakn', SessionType.DATA)
-      .then(() => {
-        this.$router.push('develop/data');
-        this.$store.dispatch('initGrakn');
-      })
-      .catch((e) => {
-        if (e.message.includes('2 UNKNOWN')) { // -> show login panel for cluster
-          this.showLoginPage = true;
-          this.showLoginPanel = true;
-        } else if (e.message.includes('14 UNAVAILABLE')) { // -> show connection panel for core
-          this.showLoginPage = true;
-          this.showConnectionPanel = true;
-        } else {
-          this.$notifyError(e);
-        }
-      });
+    this.$store.dispatch('initGrakn');
+    this.$router.push('develop/data');
   },
   created() {
     window.addEventListener('keyup', (e) => {
@@ -221,50 +206,14 @@ export default {
   methods: {
     async loginToCluster() {
       this.$toasted.clear();
-      this.isLoading = true;
-      const grakn = new GraknClient(ServerSettings.getServerUri() /*, { username: this.username, password: this.password } */);
-      await grakn.session('grakn', SessionType.DATA)
-        .then(() => {
-          this.$store.dispatch('login', { username: this.username, password: this.password });
-          storage.set('user-credentials', JSON.stringify({ username: this.username, password: this.password }));
-          this.isLoading = false;
-          this.$router.push('develop/data');
-        })
-        .catch((e) => {
-          this.isLoading = false;
-          let error;
-          if (e.message.includes('2 UNKNOWN')) {
-            error = 'Login failed: <br> - check if credentials are correct';
-          } else if (e.message.includes('14 UNAVAILABLE')) {
-            error = 'Login failed: <br> - make sure Grakn Cluster is running <br> - check that host and port are correct';
-          } else {
-            error = e;
-          }
-          this.$notifyError(error);
-        });
+      this.$store.dispatch('login', { username: this.username, password: this.password });
+      storage.set('user-credentials', JSON.stringify({ username: this.username, password: this.password }));
+      this.$router.push('develop/data');
     },
     async connectToCore() {
       this.$toasted.clear();
-      this.isLoading = true;
-      const grakn = new GraknClient(ServerSettings.getServerUri());
-      await grakn.session('grakn', SessionType.DATA)
-        .then(() => {
-          this.$router.push('develop/data');
-          this.$store.dispatch('initGrakn');
-          this.isLoading = false;
-        })
-        .catch((e) => {
-          this.isLoading = false;
-          if (e.message.includes('2 UNKNOWN')) { // -> show login panel for Cluster
-            this.showLoginPage = true;
-            this.showLoginPanel = true;
-            this.showConnectionPanel = false;
-          } else if (e.message.includes('14 UNAVAILABLE')) { // -> show connection panel for core
-            this.$notifyError('Looks like Grakn is not running: <br> - Verify Grakn is running, check the Host and Port, then refresh workbase');
-          } else {
-            this.$notifyError(e);
-          }
-        });
+      this.$store.dispatch('initGrakn');
+      this.$router.push('develop/data');
     },
   },
 };

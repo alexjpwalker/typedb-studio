@@ -19,7 +19,6 @@ export const deleteDatabase = async (context, name) => global.grakn.databases().
   .then(async () => { await context.dispatch('loadDatabases'); });
 
 export const login = (context, credentials) =>
-  // TODO: Database 'grakn' is hardcoded until we will implement an authenticate endpoint in gRPC
   context.dispatch('initGrakn', credentials).then(() => {
     context.commit('setCredentials', credentials);
     context.commit('userLogged', true);

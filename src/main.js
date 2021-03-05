@@ -55,7 +55,6 @@ router.beforeEach((to, from, next) => {
 });
 
 function initialiseStore() {
-  // this.$store.dispatch('initGrakn');
   this.$router.push(LANDING_PAGE);
 }
 

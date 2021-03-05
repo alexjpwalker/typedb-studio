@@ -2,12 +2,11 @@
 <div class="databases-wrapper">
 
     <button :class="(this.showDatabaseList) ? 'btn databases database-btn' : 'btn databases'" @click="toggleDatabaseList">
-        {{currentDatabase | truncate}}
+        <div>{{currentDatabase | truncate}}</div>
         <vue-icon icon="database" className="vue-icon database-icon"></vue-icon>
     </button>
 
     <tool-tip class="database-tooltip" msg="Please select a database" :isOpen="showDatabaseTooltip" arrowPosition="right"></tool-tip>
-
 
         <ul id="databases-list" class="databases-list arrow_box z-depth-1" v-if="showDatabaseList">
             <div style="text-align:center;" v-if="allDatabases && !allDatabases.length">no existing database</div>
@@ -17,7 +16,7 @@
 </div>
 </template>
 
-<style scoped>
+<style scoped lang="scss">
 
     .databases-wrapper {
       z-index: 3;
@@ -30,6 +29,9 @@
 
     .databases {
         display: flex;
+        > * {
+            padding-top: 5px;
+        }
     }
 
     .arrow_box {

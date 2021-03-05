@@ -61,27 +61,8 @@ function registerNotifications() {
   };
 
   Vue.prototype.$notifyError = function errorFn(e, operation) {
-    let errorMessage;
-    if (e instanceof Object) {
-      if ('message' in e) errorMessage = e.message;
-      if (errorMessage.includes('14 UNAVAILABLE')) {
-        errorMessage = 'Grakn is not available. <br> - make sure Grakn Core is running <br> - check that host and port are correct';
-      }
-      if (errorMessage.includes('3 INVALID_ARGUMENT: GraknTxOperationException') && errorMessage.includes('read only')) {
-        errorMessage = 'The transaction is read only - insert and delete queries are not supported';
-      }
-      if ((errorMessage.includes('compute') || errorMessage.includes('aggregate')) && !errorMessage.includes('compute path')) {
-        errorMessage = 'Compute and aggregate queries are not supported';
-      }
-      if ('stack' in e) logger.error(e.stack);
-    }
-
-    if (typeof e === 'string') {
-      errorMessage = e;
-      logger.error(e);
-    }
-
-    errorMessage = errorMessage.replace(/(?:\r\n|\r|\n)/g, '<br>');
+    let errorMessage = e;
+    logger.error(e);
     if (operation) errorMessage = `${errorMessage}<br><br>Action: [${operation}]`;
 
     this.$toasted.show(errorMessage, {
