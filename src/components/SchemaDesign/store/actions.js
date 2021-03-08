@@ -314,7 +314,6 @@ export default {
 
     // define and relate roles to relation type
     await Promise.all(payload.defineRoles.map(async (roleType) => {
-      await state.schemaHandler.defineRole({ roleLabel: roleType.label, superType: roleType.superType });
       await state.schemaHandler.addRelatesRole({ schemaLabel: payload.relationLabel, roleLabel: roleType.label });
     }));
 

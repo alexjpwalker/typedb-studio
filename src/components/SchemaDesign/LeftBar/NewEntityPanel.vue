@@ -23,7 +23,7 @@
         <div class="row">
           <div @click="showHasPanel = !showHasPanel" class="has-header">
             <vue-icon :icon="(showHasPanel) ?  'chevron-down' : 'chevron-right'" iconSize="14" className="vue-icon"></vue-icon>
-            has
+            owns
             </div>
         </div>
 

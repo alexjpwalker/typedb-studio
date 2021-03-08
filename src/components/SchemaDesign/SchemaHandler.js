@@ -16,76 +16,68 @@ function toGraknDatatype(valueTypeParam) {
 }
 
 SchemaHandler.prototype.defineEntityType = async function define({ entityLabel, superType }) {
-  const type = await tx.putEntityType(entityLabel);
-  const directSuper = await tx.getSchemaConcept(superType);
-  await type.sup(directSuper);
-};
-
-SchemaHandler.prototype.defineRole = async function define({ roleLabel, superType }) {
-  const type = await tx.putRole(roleLabel);
-  const directSuper = await tx.getSchemaConcept(superType);
-  await type.sup(directSuper);
-  return type;
+  const type = await tx.concepts().putEntityType(entityLabel);
+  const directSuper = await tx.concepts().getEntityType(superType);
+  await type.asRemote(tx).setSupertype(directSuper);
 };
 
 SchemaHandler.prototype.defineRelationType = async function define({ relationLabel, superType }) {
-  const type = await tx.putRelationType(relationLabel);
-  const directSuper = await tx.getSchemaConcept(superType);
-  await type.sup(directSuper);
+  const type = await tx.concepts().putRelationType(relationLabel);
+  const directSuper = await tx.concepts().getRelationType(superType);
+  await type.asRemote(tx).setSupertype(directSuper);
   return type;
 };
 
 SchemaHandler.prototype.defineAttributeType = async function define({ attributeLabel, superType, valueType }) {
-  const type = await tx.putAttributeType(attributeLabel, toGraknDatatype(valueType));
-  const directSuper = await tx.getSchemaConcept(superType);
-  await type.sup(directSuper);
+  const type = await tx.concepts().putAttributeType(attributeLabel, toGraknDatatype(valueType));
+  const directSuper = await tx.concepts().getAttributeType(superType);
+  await type.asRemote(tx).setSupertype(directSuper);
 };
 
 SchemaHandler.prototype.defineRule = async function define({ ruleLabel, when, then }) {
-  return tx.putRule(ruleLabel, when, then);
+  return tx.logic().putRule(ruleLabel, when, then);
 };
 
 SchemaHandler.prototype.deleteType = async function deleteType({ label }) {
-  const type = await tx.getSchemaConcept(label);
-  await type.delete();
-  return type.id;
+  const type = await tx.concepts().getThingType(label);
+  await type.asRemote(tx).delete();
+  return type.getLabel();
 };
 
 SchemaHandler.prototype.addAttribute = async function addAttribute({ schemaLabel, attributeLabel }) {
-  const type = await tx.getSchemaConcept(schemaLabel);
-  const attribute = await tx.getSchemaConcept(attributeLabel);
-  return type.has(attribute);
+  const type = await tx.concepts().getThingType(schemaLabel);
+  const attribute = await tx.concepts().getAttributeType(attributeLabel);
+  return type.asRemote(tx).setOwns(attribute);
 };
 
 SchemaHandler.prototype.deleteAttribute = async function deleteAttribute({ label, attributeLabel }) {
-  const type = await tx.getSchemaConcept(label);
-  const attribute = await tx.getSchemaConcept(attributeLabel);
-  return type.unhas(attribute);
+  const type = await tx.concepts().getThingType(label);
+  const attribute = await tx.concepts().getAttributeType(attributeLabel);
+  return type.asRemote(tx).unsetOwns(attribute);
 };
 
-SchemaHandler.prototype.addPlaysRole = async function addPlaysRole({ schemaLabel, roleLabel }) {
-  const type = await tx.getSchemaConcept(schemaLabel);
-  const role = await tx.getSchemaConcept(roleLabel);
-  return type.plays(role);
+SchemaHandler.prototype.addPlaysRole = async function addPlaysRole({ schemaLabel, relationLabel, roleLabel }) {
+  const type = await tx.concepts().getThingType(schemaLabel);
+  const relation = await tx.concepts().getRelationType(relationLabel);
+  const role = await relation.asRemote(tx).getRelates(roleLabel);
+  return type.asRemote(tx).setPlays(role);
 };
 
-SchemaHandler.prototype.deletePlaysRole = async function deletePlaysRole({ label, roleLabel }) {
-  const type = await tx.getSchemaConcept(label);
-  const role = await tx.getSchemaConcept(roleLabel);
-  return type.unplay(role);
+SchemaHandler.prototype.deletePlaysRole = async function deletePlaysRole({ label, relationLabel, roleLabel }) {
+  const type = await tx.concepts().getThingType(label);
+  const relation = await tx.concepts().getRelationType(relationLabel);
+  const role = await relation.asRemote(tx).getRelates(roleLabel);
+  return type.asRemote(tx).unsetPlays(role);
 };
 
 SchemaHandler.prototype.addRelatesRole = async function addRelatesRole({ schemaLabel, roleLabel }) {
-  const relationType = await tx.getSchemaConcept(schemaLabel);
-  const role = await tx.getSchemaConcept(roleLabel);
-  return relationType.relates(role);
+  const relationType = await tx.concepts().getRelationType(schemaLabel);
+  return relationType.asRemote(tx).setRelates(roleLabel);
 };
 
-SchemaHandler.prototype.deleteRelatesRole = async function deleteRelatesRole({ label, roleLabel }) {
-  const relationType = await tx.getSchemaConcept(label);
-  const role = await tx.getSchemaConcept(roleLabel);
-  await relationType.unrelate(role);
-  return role.delete();
+SchemaHandler.prototype.deleteRelatesRole = async function deleteRelatesRole({ schemaLabel, roleLabel }) {
+  const relationType = await tx.concepts().getRelationType(schemaLabel);
+  return relationType.asRemote(tx).unsetRelates(roleLabel);
 };
 
 export default SchemaHandler;
