@@ -190,7 +190,7 @@ const getInstanceNode = async (instance, graqlVar, explanation) => {
   const baseType = getThingBaseType(instance);
   switch (baseType) {
     case ENTITY_INSTANCE: {
-      node.label = await getNodeLabelWithAttrs(`${node.type}: ${node.id}`, node.type, instance);
+      node.label = await getNodeLabelWithAttrs(`${node.type}: ${node.iid}`, node.type, instance);
       break;
     }
     case RELATION_INSTANCE: {
@@ -471,33 +471,20 @@ const getNeighbourNode = async (concept, graqlVar, explanation) => {
 const getNeighbourEdges = async (neighbourConcept, targetConcept, existingNodeIds) => {
   const edges = [];
 
-  switch (targetConcept.baseType) {
-    case ENTITY_TYPE:
-    case ATTRIBUTE_TYPE:
-    case RELATION_TYPE:
-      edges.push(getEdge(neighbourConcept, targetConcept, edgeTypes.instance.ISA));
-      break;
-
-    case ENTITY_INSTANCE:
-      if (neighbourConcept.baseType === 'RELATION') {
-        const relation = neighbourConcept;
-        edges.push(...await getInstanceRelatesEdges(relation));
-      }
-      break;
-
-    case ATTRIBUTE_INSTANCE: {
-      const owner = neighbourConcept;
-      edges.push(getEdge(owner, targetConcept, edgeTypes.instance.HAS));
-      break;
+  if (targetConcept.isEntityType() || targetConcept.isRelationType() || targetConcept.isAttributeType()) {
+    edges.push(getEdge(neighbourConcept, targetConcept, edgeTypes.instance.ISA));
+  } else if (targetConcept.isEntity()) {
+    if (neighbourConcept.isRelation()) {
+      const relation = neighbourConcept;
+      edges.push(...await getInstanceRelatesEdges(relation));
     }
-
-    case RELATION_INSTANCE: {
-      edges.push(...await getInstanceRelatesEdges(targetConcept));
-      break;
-    }
-
-    default:
-      throw new Error(`Instance type [${targetConcept.baseType}] is not recoganised`);
+  } else if (targetConcept.isAttribute()) {
+    const owner = neighbourConcept;
+    edges.push(getEdge(owner, targetConcept, edgeTypes.instance.HAS));
+  } else if (targetConcept.isRelation()) {
+    edges.push(...await getInstanceRelatesEdges(targetConcept));
+  } else {
+    throw new Error(`Instance type [${targetConcept}] is not recoganised`);
   }
 
   // exclude any edges that connect nodes which do not exist
@@ -533,7 +520,7 @@ const buildNeighbours = async (targetConcept, answers) => {
     .reduce(collect, []);
 
   const nodeIds = nodes.map(node => node.id);
-  nodeIds.push(targetConcept.id);
+  nodeIds.push(targetConcept.isThing() ? targetConcept.getIID() : targetConcept.getLabel());
   const edges = (await Promise.all(data.filter(item => item.shouldVisualise).map(item => getNeighbourEdges(item.concept, targetConcept, nodeIds)))).reduce(collect, []);
 
   return { nodes, edges };
