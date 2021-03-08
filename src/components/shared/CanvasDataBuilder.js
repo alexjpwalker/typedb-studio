@@ -3,6 +3,7 @@ import QuerySettings from '../Visualiser/RightBar/SettingsTab/QuerySettings';
 import DisplaySettings from '../Visualiser/RightBar/SettingsTab/DisplaySettings';
 import {baseTypes, META_LABELS} from './SharedUtils';
 import store from '../../store';
+import {getConcept} from "../Visualiser/VisualiserUtils";
 
 const convertToRemote = (concept) => {
   if (concept.asRemote) {
@@ -131,15 +132,11 @@ const getNodeLabelWithAttrs = async (baseLabel, type, instance) => {
   const selectedAttrs = DisplaySettings.getTypeLabels(type);
 
   if (selectedAttrs.length > 0) {
-    const allAttrs = await (await convertToRemote(instance).attributes()).collect();
+    const allAttrs = await convertToRemote(instance).getHas().collect();
 
     const promises = allAttrs.map(async attr => new Promise((resolve) => {
-      attr.type().then((type) => {
-        type.label().then((label) => {
-          attr.value().then((value) => {
-            resolve({ label, value });
-          });
-        });
+      convertToRemote(attr).getType().then((type) => {
+        resolve({ label: type.getLabel(), value: attr.getValue() });
       });
     }));
 
@@ -527,6 +524,7 @@ const buildNeighbours = async (targetConcept, answers) => {
 };
 
 
+// TODO
 const updateNodesLabel = async (nodes) => {
   const updatedLabels = await Promise.all(nodes.map(async (node) => {
     const instance = await global.graknTx[store.getters.activeTab].getConcept(node.id);
