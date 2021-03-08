@@ -524,16 +524,19 @@ const buildNeighbours = async (targetConcept, answers) => {
 };
 
 
-// TODO
 const updateNodesLabel = async (nodes) => {
   const updatedLabels = await Promise.all(nodes.map(async (node) => {
-    const instance = await global.graknTx[store.getters.activeTab].getConcept(node.id);
-    const baseLabel = node.typeLabel.split('\n')[0];
-    return getNodeLabelWithAttrs(baseLabel, node.type, instance);
+    if (node.iid) {
+      const instance = await getConcept(node, global.graknTx[store.getters.activeTab]);
+      const baseLabel = node.label.split('\n')[0];
+      return getNodeLabelWithAttrs(baseLabel, node.type, instance);
+    } else {
+      return node.label;
+    }
   }));
 
   const updatedNodes = nodes.map((node, i) => {
-    node.typeLabel = updatedLabels[i];
+    node.label = updatedLabels[i];
     return node;
   });
 
