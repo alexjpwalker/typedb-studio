@@ -298,7 +298,7 @@ export default {
       else if (this.showSpinner) this.$notifyInfo('Please wait for action to complete');
       else {
         this[CANVAS_RESET]();
-        global.graknTx[this.$store.getters.activeTab] = await global.graknSession.transaction(TransactionType.WRITE);
+        global.graknTx[this.$store.getters.activeTab] = await global.graknSession.transaction(TransactionType.READ);
       }
     },
     toggleAddFavQuery() {

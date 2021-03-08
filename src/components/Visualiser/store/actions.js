@@ -58,7 +58,7 @@ export default {
       // eslint-disable-next-line no-prototype-builtins
       if (!global.graknTx) global.graknTx = {};
       if (global.graknTx[rootState.activeTab]) global.graknTx[rootState.activeTab].close();
-      global.graknTx[rootState.activeTab] = await global.graknSession.transaction(TransactionType.WRITE);
+      global.graknTx[rootState.activeTab] = await global.graknSession.transaction(TransactionType.READ);
       dispatch(UPDATE_METATYPE_INSTANCES);
     }
   },

@@ -43,21 +43,21 @@ export async function loadMetaTypeInstances(graknTx) {
 }
 
 // attach attribute labels and data types to each node
-export async function computeAttributes(nodes, graknTx) {
+export async function computeAttributes(nodes, tx) {
   return Promise.all(nodes.map(async (node) => {
-    const concept = await graknTx.getSchemaConcept(node.typeLabel);
-    const attributes = await (await concept.attributes()).collect();
-    node.attributes = await Promise.all(attributes.map(async concept => ({ type: await concept.label(), valueType: await concept.valueType() })));
+    const concept = await tx.concepts().getThingType(node.typeLabel);
+    const attributes = await concept.asRemote(tx).getOwns().collect();
+    node.attributes = await Promise.all(attributes.map(async concept => ({ type: await concept.getLabel(), valueType: await concept.getValueType() })));
     return node;
   }));
 }
 
 // attach role labels to each node
-export async function computeRoles(nodes, graknTx) {
+export async function computeRoles(nodes, tx) {
   return Promise.all(nodes.map(async (node) => {
-    const concept = await graknTx.getSchemaConcept(node.typeLabel);
-    const roles = await (await concept.playing()).collect();
-    node.roles = await Promise.all(roles.map(concept => concept.label())).then(nodes => nodes.filter(x => x));
+    const concept = await tx.concepts().getThingType(node.typeLabel);
+    const roles = await concept.asRemote(tx).getPlays().collect();
+    node.roles = await Promise.all(roles.map(concept => concept.getScopedLabel()));
     return node;
   }));
 }

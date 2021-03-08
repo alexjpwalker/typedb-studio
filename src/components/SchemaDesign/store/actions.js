@@ -46,7 +46,7 @@ export default {
       dispatch(CANVAS_RESET);
       commit('currentDatabase', database);
       if (global.graknSession) await global.graknSession.close();
-      global.graknSession = await global.grakn.session(database, SessionType.DATA);
+      global.graknSession = await global.grakn.session(database, SessionType.SCHEMA);
       dispatch(UPDATE_METATYPE_INSTANCES);
       dispatch(LOAD_SCHEMA);
     }
@@ -77,7 +77,7 @@ export default {
       if (!state.visFacade) return;
       commit('loadingSchema', true);
 
-      const answers = (await (await graknTx.query('match $x sub thing; get;')).collect());
+      const answers = await graknTx.query().match('match $x sub thing;').collect();
 
       const data = await CDB.buildTypes(answers);
       data.nodes = updateNodePositions(data.nodes);
