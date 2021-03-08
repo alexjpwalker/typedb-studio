@@ -82,6 +82,10 @@ export default {
   padding:8px 10px;
   cursor: pointer;
   opacity: 0.8;
+  user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
 }
 
 .context-action:not(.disabled):hover{

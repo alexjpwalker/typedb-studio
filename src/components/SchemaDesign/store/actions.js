@@ -1,35 +1,30 @@
 import {
-  OPEN_GRAKN_TX,
-  LOAD_SCHEMA,
-  CURRENT_DATABASE_CHANGED,
-  CANVAS_RESET,
-  UPDATE_METATYPE_INSTANCES,
-  INITIALISE_VISUALISER,
-  DEFINE_ENTITY_TYPE,
-  COMMIT_TX,
-  DEFINE_ATTRIBUTE_TYPE,
-  DEFINE_RELATION_TYPE,
-  DELETE_SCHEMA_CONCEPT,
-  REFRESH_SELECTED_NODE,
-  DELETE_ATTRIBUTE,
-  DEFINE_RULE,
   ADD_ATTRIBUTE_TYPE,
   ADD_ROLE_TYPE,
+  CANVAS_RESET,
+  COMMIT_TX,
+  CURRENT_DATABASE_CHANGED,
+  DEFINE_ATTRIBUTE_TYPE,
+  DEFINE_ENTITY_TYPE,
+  DEFINE_RELATION_TYPE,
+  DEFINE_RULE,
+  DELETE_ATTRIBUTE,
   DELETE_ROLE,
+  DELETE_SCHEMA_CONCEPT,
+  INITIALISE_VISUALISER,
+  LOAD_SCHEMA,
+  OPEN_GRAKN_TX,
+  REFRESH_SELECTED_NODE,
+  UPDATE_METATYPE_INSTANCES,
 } from '@/components/shared/StoresActions';
 import logger from '@/logger';
 
 import SchemaHandler from '../SchemaHandler';
-import {
-  updateNodePositions,
-  loadMetaTypeInstances,
-  computeAttributes,
-  computeRoles,
-} from '../SchemaUtils';
+import { computeAttributes, computeRoles, loadMetaTypeInstances, updateNodePositions, } from '../SchemaUtils';
 import SchemaCanvasEventsHandler from '../SchemaCanvasEventsHandler';
 import CDB from '../../shared/CanvasDataBuilder';
-import { META_LABELS } from '../../shared/SharedUtils';
 import { Grakn } from "grakn-client/Grakn";
+
 const { SessionType, TransactionType } = Grakn;
 
 export default {
@@ -104,34 +99,34 @@ export default {
   },
 
   async [DEFINE_ENTITY_TYPE]({ state, dispatch }, payload) {
-    let graknTx = await dispatch(OPEN_GRAKN_TX);
+    let tx = await dispatch(OPEN_GRAKN_TX);
 
     // define entity type
-    await state.schemaHandler.defineEntityType(payload);
+    await state.schemaHandler.defineEntityType(payload.entityLabel, payload.superType);
 
     // add attribute types to entity type
     await Promise.all(payload.attributeTypes.map(async (attributeType) => {
-      await state.schemaHandler.addAttribute({ schemaLabel: payload.entityLabel, attributeLabel: attributeType });
+      await state.schemaHandler.addAttribute(payload.entityLabel, attributeType);
     }));
 
     // add roles to entity type
     await Promise.all(payload.roleTypes.map(async (roleType) => {
-      await state.schemaHandler.addPlaysRole({ schemaLabel: payload.entityLabel, roleLabel: roleType });
+      const [relationLabel, roleLabel] = roleType.split(':');
+      await state.schemaHandler.addPlaysRole(payload.entityLabel, relationLabel, roleLabel);
     }));
 
-    await dispatch(COMMIT_TX, graknTx)
+    await dispatch(COMMIT_TX, tx)
       .catch((e) => {
-        graknTx.close();
+        tx.close();
         logger.error(e.stack);
         throw e;
       });
 
     await dispatch(UPDATE_METATYPE_INSTANCES);
 
-    graknTx = await dispatch(OPEN_GRAKN_TX);
+    tx = await dispatch(OPEN_GRAKN_TX);
 
-    const concept = await graknTx.getSchemaConcept(payload.entityLabel);
-    concept.label = payload.entityLabel;
+    const concept = await tx.concepts().getEntityType(payload.entityLabel);
 
     const node = CDB.getTypeNode(concept);
     const edges = await CDB.getTypeEdges(concept, [node.id, ...state.visFacade.getAllNodes().map(n => n.id)]);
@@ -139,10 +134,10 @@ export default {
     state.visFacade.addToCanvas({ nodes: [node], edges });
 
     // attach attributes and roles to visnode and update on graph to render the right bar attributes
-    let nodes = await computeAttributes([node], graknTx);
-    nodes = await computeRoles(nodes, graknTx);
+    let nodes = await computeAttributes([node], tx);
+    nodes = await computeRoles(nodes, tx);
     state.visFacade.updateNode(nodes);
-    graknTx.close();
+    tx.close();
   },
 
   async [DEFINE_ATTRIBUTE_TYPE]({ state, dispatch }, payload) {
@@ -153,12 +148,12 @@ export default {
 
     // add attribute types to attribute type
     await Promise.all(payload.attributeTypes.map(async (attributeType) => {
-      await state.schemaHandler.addAttribute({ schemaLabel: payload.attributeLabel, attributeLabel: attributeType });
+      await state.schemaHandler.addAttribute(payload.attributeLabel, attributeType);
     }));
 
     // add roles to attribute type
     await Promise.all(payload.roleTypes.map(async (roleType) => {
-      await state.schemaHandler.addPlaysRole({ schemaLabel: payload.attributeLabel, roleLabel: roleType });
+      await state.schemaHandler.addPlaysRole(payload.attributeLabel, roleType);
     }));
 
     await dispatch(COMMIT_TX, graknTx)
@@ -192,7 +187,7 @@ export default {
 
     // add attribute types to schema concept
     await Promise.all(payload.attributeTypes.map(async (attributeType) => {
-      await state.schemaHandler.addAttribute({ schemaLabel: payload.label, attributeLabel: attributeType });
+      await state.schemaHandler.addAttribute(payload.label, attributeType);
     }));
 
     await dispatch(COMMIT_TX, graknTx)
@@ -219,7 +214,7 @@ export default {
 
     // add role types to schema concept
     await Promise.all(payload.roleTypes.map(async (roleType) => {
-      await state.schemaHandler.addPlaysRole({ schemaLabel: payload.label, roleLabel: roleType });
+      await state.schemaHandler.addPlaysRole(payload.label, roleType);
     }));
 
     await dispatch(COMMIT_TX, graknTx)
@@ -314,22 +309,22 @@ export default {
 
     // define and relate roles to relation type
     await Promise.all(payload.defineRoles.map(async (roleType) => {
-      await state.schemaHandler.addRelatesRole({ schemaLabel: payload.relationLabel, roleLabel: roleType.label });
+      await state.schemaHandler.addRelatesRole(payload.relationLabel, roleType.label);
     }));
 
     // relate roles to relation type
     await Promise.all(payload.relateRoles.map(async (roleType) => {
-      await state.schemaHandler.addRelatesRole({ schemaLabel: payload.relationLabel, roleLabel: roleType });
+      await state.schemaHandler.addRelatesRole(payload.relationLabel, roleType);
     }));
 
     // add attribute types to relation type
     await Promise.all(payload.attributeTypes.map(async (attributeType) => {
-      await state.schemaHandler.addAttribute({ schemaLabel: payload.relationLabel, attributeLabel: attributeType });
+      await state.schemaHandler.addAttribute(payload.relationLabel, attributeType);
     }));
 
     // add roles to relation type
     await Promise.all(payload.roleTypes.map(async (roleType) => {
-      await state.schemaHandler.addPlaysRole({ schemaLabel: payload.relationLabel, roleLabel: roleType });
+      await state.schemaHandler.addPlaysRole(payload.relationLabel, roleType);
     }));
 
     await dispatch(COMMIT_TX, graknTx)
@@ -359,56 +354,35 @@ export default {
   },
 
   async [DELETE_SCHEMA_CONCEPT]({ state, dispatch, commit }, payload) {
-    const graknTx = await dispatch(OPEN_GRAKN_TX);
+    const tx = await dispatch(OPEN_GRAKN_TX);
 
-    const type = await graknTx.getSchemaConcept(payload.label);
-
-    const subs = await (await type.subs()).collect();
-    await Promise.all(subs.map(async (x) => {
-      if (await x.label() !== payload.typeLabel) throw Error('Cannot delete sub-typed schema concept');
-    }));
-
-    if (await (await type.instances()).next()) throw Error('Cannot delete schema concept which has instances');
+    const type = await tx.concepts().getThingType(payload.typeLabel);
 
     if (payload.baseType === 'RELATION_TYPE') {
-      const roles = await (await type.roles()).collect();
+      const roles = await type.asRemote(tx).getRelates().collect();
       await Promise.all(roles.map(async (role) => {
-        const roleLabel = await role.label();
-        const rolePlayers = await (await role.players()).collect();
+        const rolePlayers = await role.asRemote(tx).getPlayers().collect();
 
         await Promise.all(rolePlayers.map(async (player) => {
-          await state.schemaHandler.deletePlaysRole({ label: await player.label(), roleLabel });
+          await state.schemaHandler.deletePlaysRole(player.getLabel(), type.getLabel(), role.getLabel());
         }));
 
-        // If relation type is suptyped and inherits a role only unrelate the role
-        // otherwise unrelate and delete role
-        const sup = await type.sup();
-        if (sup) {
-          const supLabel = await sup.label();
-          if (!META_LABELS.has(supLabel)) { // check if relation type is sub-typed or not
-            const roleSup = await role.sup();
-            const roleSupLabel = await roleSup.label();
-            if (roleSupLabel === 'role') await type.unrelate(role); // check if role is overridden or not
-            else await state.schemaHandler.deleteRelatesRole({ label: payload.label, roleLabel });
-          } else {
-            await state.schemaHandler.deleteRelatesRole({ label: payload.label, roleLabel });
-          }
-        }
+        await state.schemaHandler.deleteRelatesRole(type.getLabel(), role.getLabel());
       }));
     } else if (payload.baseType === 'ATTRIBUTE_TYPE') {
       const nodes = state.visFacade.getAllNodes();
       await Promise.all(nodes.map(async (node) => {
-        await state.schemaHandler.deleteAttribute({ label: node.typeLabel, attributeLabel: payload.typeLabel });
-        node.attributes = node.attributes.filter((x => x.type !== payload.typeLabel));
+        await state.schemaHandler.deleteAttribute(node.typeLabel, payload.typeLabel);
+        node.attributes = node.attributes.filter((x => x.typeLabel !== payload.typeLabel));
       }));
       state.visFacade.updateNode(nodes);
     }
 
-    const typeId = await state.schemaHandler.deleteType(payload);
+    const typeId = await state.schemaHandler.deleteType(payload.typeLabel);
 
-    await dispatch(COMMIT_TX, graknTx)
+    await dispatch(COMMIT_TX, tx)
       .catch((e) => {
-        graknTx.close();
+        tx.close();
         logger.error(e.stack);
         throw e;
       });
@@ -428,7 +402,7 @@ export default {
     const graknTx = await dispatch(OPEN_GRAKN_TX);
 
     // define rule
-    await state.schemaHandler.defineRule(payload);
+    await state.schemaHandler.defineRule(payload.ruleLabel, payload.when, payload.then);
 
     await dispatch(COMMIT_TX, graknTx)
       .catch((e) => {
@@ -437,54 +411,4 @@ export default {
         throw e;
       });
   },
-
-  // async [DELETE_PLAYS_ROLE]({ state, dispatch }, payload) {
-  //   const graknTx = await dispatch(OPEN_GRAKN_TX);
-  //   await state.schemaHandler.deletePlaysRole(payload);
-  //   dispatch(COMMIT_TX, graknTx).then(async () => {
-  //     const type = await graknTx.getSchemaConcept(payload.label);
-  //     state.visFacade.deleteEdgesOnNode(type.id, payload.roleName);
-  //     dispatch(REFRESH_SELECTED_NODE);
-  //   })
-  //     .catch((e) => { throw e; });
-  // },
-
-  // async [DELETE_RELATES_ROLE]({ state, dispatch }, payload) {
-  //   const graknTx = await dispatch(OPEN_GRAKN_TX);
-  //   await state.schemaHandler.deleteRelatesRole(payload);
-  //   dispatch(COMMIT_TX, graknTx).then(async () => {
-  //     const type = await graknTx.getSchemaConcept(payload.label);
-  //     state.visFacade.deleteEdgesOnNode(type.id, payload.roleName);
-  //     dispatch(REFRESH_SELECTED_NODE);
-  //   })
-  //     .catch((e) => { throw e; });
-  // },
-
-  // async [ADD_TYPE]({ dispatch, state }, payload) {
-  //   const graknTx = await dispatch(OPEN_GRAKN_TX);
-
-  //   switch (payload.type) {
-  //     case 'attribute': {
-  //       await this.schemaHandler.addAttribute({ label: state.selectedNodes[0].label, typeLabel: payload.typeLabel });
-  //       break;
-  //     }
-  //     case 'plays': {
-  //       await this.schemaHandler.addPlaysRole({ label: state.selectedNodes[0].label, typeLabel: payload.typeLabel });
-  //       const type = await graknTx.getSchemaConcept(state.selectedNodes[0].label);
-  //       const relatesEdges = await relationTypesOutboundEdges([type]);
-  //       state.visFacade.addToCanvas({ nodes: [], edges: relatesEdges });
-  //       break;
-  //     }
-  //     case 'relates': {
-  //       await this.schemaHandler.addRelatesRole({ label: state.selectedNodes[0].label, typeLabel: payload.typeLabel });
-  //       const type = await graknTx.getSchemaConcept(state.selectedNodes[0].label);
-  //       const relatesEdges = await relationTypesOutboundEdges([type]);
-  //       state.visFacade.addToCanvas({ nodes: [], edges: relatesEdges });
-  //       break;
-  //     }
-  //     default:
-  //       // do nothing
-  //   }
-  //   dispatch(REFRESH_SELECTED_NODE);
-  // },
 };

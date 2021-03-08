@@ -1,7 +1,7 @@
 import { Grakn } from "grakn-client/Grakn";
 const { TransactionType } = Grakn;
 
-export const META_LABELS = new Set(['entity', 'relation', 'attribute', 'role', 'thing']);
+export const META_LABELS = new Set(['entity', 'relation', 'attribute', 'relation:role', 'thing']);
 
 export const baseTypes = {
   THING_TYPE: 'THING_TYPE',
