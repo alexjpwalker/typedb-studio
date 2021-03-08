@@ -214,7 +214,7 @@ const getInstanceNode = async (instance, graqlVar, explanation) => {
  * @param {Concept} attribute must be an attribute instance
  */
 const getInstanceHasEdges = async (attribute) => {
-  const owners = (await (await convertToRemote(attribute).owners()).collect());
+  const owners = await convertToRemote(attribute).getOwners().collect();
   const edges = owners.map(owner => getEdge(owner, attribute, edgeTypes.instance.HAS));
   return edges;
 };

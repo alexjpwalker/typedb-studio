@@ -204,10 +204,17 @@ export default {
     try {
       const graknTx = global.graknTx[rootState.activeTab];
       commit('loadingQuery', true);
-      const query = `match $x id ${visNode.id}, has attribute $y; get $y; offset ${visNode.attrOffset}; limit ${neighboursLimit};`;
+      let query;
+      if (visNode.iid) {
+        query = `match $x iid ${visNode.iid}, has attribute $y; get $y; offset ${visNode.attrOffset}; limit ${neighboursLimit};`;
+      } else if (visNode.typeLabel) {
+        query = `match $x type ${visNode.typeLabel}, owns $y; get $y; offset ${visNode.attrOffset}; limit ${neighboursLimit};`;
+      } else {
+        throw "Node does not have a Label or an ID";
+      }
       state.visFacade.updateNode({ id: visNode.id, attrOffset: visNode.attrOffset + neighboursLimit });
 
-      const result = await (await graknTx.query().match(query)).collect();
+      const result = await graknTx.query().match(query).collect();
 
       const shouldLoadRPs = QuerySettings.getRolePlayersStatus();
       const shouldLimit = true;
@@ -224,7 +231,11 @@ export default {
       commit('loadingQuery', false);
 
       if (data) { // when attributes are found, construct edges and add to graph
-        const edges = data.nodes.map(attr => CDB.getEdge(visNode, attr, CDB.edgeTypes.instance.HAS));
+        const edges = await Promise.all(data.nodes.map(async attr => {
+          let ownerConcept = await getConcept(visNode, graknTx);
+          let attrConcept = await getConcept(attr, graknTx);
+          return CDB.getEdge(ownerConcept, attrConcept, CDB.edgeTypes.instance.HAS)
+        }));
 
         state.visFacade.addToCanvas({ nodes: data.nodes, edges });
         commit('updateCanvasData');
