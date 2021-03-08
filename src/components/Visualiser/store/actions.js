@@ -133,13 +133,12 @@ export default {
     try {
       commit('setGlobalErrorMsg', '');
       const query = state.currentQuery;
-      // TODO: fix query validation
-      // validateQuery(query);
+      validateQuery(query);
 
       commit('loadingQuery', true);
       const graknTx = global.graknTx[rootState.activeTab];
-      const options = new GraknOptions().setExplain(true);
-      const result = await (await graknTx.query().match(query, options)).collect();
+      const options = new GraknOptions().setExplain(false);
+      const result = await graknTx.query().match(query, options).collect();
       if (!result.length) {
         commit('loadingQuery', false);
         return null;

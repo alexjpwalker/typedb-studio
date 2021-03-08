@@ -81,7 +81,7 @@ export async function loadMetaTypeInstances(graknTx) {
 
 export function validateQuery(query) {
   const trimmedQuery = query.trim();
-  const supportedQueryRgx = /get[^;]*?;\s*offset\s+\d+\s*;\s*limit\s+\d+\s*;$/;
+  const supportedQueryRgx = /^match\s+/;
   if (!supportedQueryRgx.test(trimmedQuery)) {
     throw new Error('At the moment, only `match` queries are supported.');
   }

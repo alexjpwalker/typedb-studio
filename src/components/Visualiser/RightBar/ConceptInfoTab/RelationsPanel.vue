@@ -187,9 +187,9 @@
           // For every relation, map relations to their respective rolePlayer and the role it plays
           if (node.iid) {
               // Get relation concepts of current role
-              let relations = await concept.asRemote(tx).getRelations([role]);
+              let relations = await concept.asRemote(tx).getRelations([role]).collect();
               await Promise.all(relations.map(async (relation) => {
-                  const rolePlayers = Array.from((await relation.getPlayersByRoleType()).entries());
+                  const rolePlayers = Array.from((await relation.asRemote(tx).getPlayersByRoleType()).entries());
                   await Promise.all(Array.from(rolePlayers, async ([role, setOfThings]) => {
                       // Do not include the current role
                       if (role.getScopedLabel() !== this.currentRole) {

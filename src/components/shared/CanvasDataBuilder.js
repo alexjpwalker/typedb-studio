@@ -463,7 +463,7 @@ const getNeighbourNode = async (concept, graqlVar, explanation) => {
 };
 
 /**
- * Prroduces and returns the edges that connect the given targetNode with its neighbourNode
+ * Produces and returns the edges that connect the given targetNode with its neighbourNode
  * @param {*} neighbourConcept
  * @param {*} targetNode the node whose neighbour edges are to be produced
  * @param {*} graknTx
