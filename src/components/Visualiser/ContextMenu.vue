@@ -1,8 +1,8 @@
 <template>
     <div v-show="contextMenu.show" ref="contextMenu" id="context-menu" class="z-depth-2">
         <li @click="(enableDelete) ? deleteNode() : false" class="context-action delete-nodes" :class="{'disabled':!enableDelete}">Hide</li>
-        <li @click="(enableExplain) ? explainNode() : false" class="context-action explain-node" :class="{'disabled':!enableExplain}">Explain</li>
-        <li @click="(enableShortestPath) ? computeShortestPath() : false" class="context-action compute-shortest-path" :class="{'disabled':!enableShortestPath}">Shortest Path</li>
+<!--        <li @click="(enableExplain) ? explainNode() : false" class="context-action explain-node" :class="{'disabled':!enableExplain}">Explain</li>-->
+<!--        <li @click="(enableShortestPath) ? computeShortestPath() : false" class="context-action compute-shortest-path" :class="{'disabled':!enableShortestPath}">Shortest Path</li>-->
     </div>
 </template>
 <script>
@@ -83,6 +83,10 @@
         cursor: pointer;
         opacity: 0.8;
         list-style-type: none;
+        user-select: none;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
     }
 
     .context-action:not(.disabled):hover{
