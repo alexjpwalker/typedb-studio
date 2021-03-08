@@ -138,34 +138,37 @@
         this.currentRole = role;
       },
       async loadRolesAndRelations() {
-        const node = this.selectedNodes[0];
-        const tx = global.graknTx[this.$store.getters.activeTab];
-        let roles;
-        if (node.iid) {
-          const thing = await tx.concepts().getThing(node.iid);
-          roles = await thing.asRemote(tx).getPlays().collect();
-        } else if (node.typeLabel) {
-          const thingType = await tx.concepts().getThingType(node.typeLabel);
-          roles = await thingType.asRemote(tx).getPlays().collect();
-        } else {
-          throw "Node must have either an IID or a Label";
-        }
-        // Map roles to their respective relations and an empty array of other role players in that relation
-        // Role => { relation, otherRolePlayers = [] }
-        for (const role of roles) {
-          const roleLabel = role.getScopedLabel();
-          if (!(roleLabel in this.relations)) {
-            this.relations.set(roleLabel, new Map());
-            (await role.asRemote(tx).getRelationTypes().collect()).forEach((x) => {
-              this.relations.set(roleLabel, { relation: x.getLabel(), otherRolePlayers: [] });
-            });
+        if (this.selectedNodes && this.selectedNodes.length) {
+          const node = this.selectedNodes[0];
+          const tx = global.graknTx[this.$store.getters.activeTab];
+          let roles;
+          if (node.iid) {
+              const thing = await tx.concepts().getThing(node.iid);
+              roles = await thing.asRemote(tx).getPlays().collect();
+          } else if (node.typeLabel) {
+              const thingType = await tx.concepts().getThingType(node.typeLabel);
+              roles = await thingType.asRemote(tx).getPlays().collect();
+          } else {
+              throw "Node must have either an IID or a Label";
           }
+          // Map roles to their respective relations and an empty array of other role players in that relation
+          // Role => { relation, otherRolePlayers = [] }
+          for (const role of roles) {
+              const roleLabel = role.getScopedLabel();
+              if (!(roleLabel in this.relations)) {
+                  this.relations.set(roleLabel, new Map());
+                  (await role.asRemote(tx).getRelationTypes().collect()).forEach((x) => {
+                      this.relations.set(roleLabel, { relation: x.getLabel(), otherRolePlayers: [] });
+                  });
+              }
+          }
+          return this.relations.keys().next().value;
         }
-        return this.relations.keys().next().value;
       },
       async loadOtherRolePlayers() {
         // If roleplayers have not already been computed
-        if (!this.relations.get(this.currentRole).otherRolePlayers.length) {
+        if (this.currentRole && this.selectedNodes && this.selectedNodes.length) {
+          if (this.relations.get(this.currentRole).otherRolePlayers.length) return;
           const node = this.selectedNodes[0];
           const tx = global.graknTx[this.$store.getters.activeTab];
           let concept;
