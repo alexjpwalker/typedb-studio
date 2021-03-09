@@ -103,10 +103,8 @@
 
         const attributes = nodes[0].attributes;
 
-        if (attributes) {
-          this.attributes = Object.values(attributes).sort((a, b) => ((a.type > b.type) ? 1 : -1));
-          this.showAttributesPanel = true;
-        }
+        this.attributes = Object.values(attributes).sort((a, b) => ((a.type > b.type) ? 1 : -1));
+        this.showAttributesPanel = true;
       },
       toggleContent() {
         this.showAttributesPanel = !this.showAttributesPanel;

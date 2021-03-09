@@ -48,7 +48,7 @@
 </template>
 
 <script>
-  import { ADD_ROLE_TYPE, REFRESH_SELECTED_NODE, DELETE_ROLE } from '@/components/shared/StoresActions';
+  import { ADD_PLAYS, REFRESH_SELECTED_NODE, DELETE_PLAYS } from '@/components/shared/StoresActions';
   import { createNamespacedHelpers } from 'vuex';
   
   export default {
@@ -77,7 +77,7 @@
       // methods
       this.$options.methods = {
         ...(this.$options.methods || {}),
-        ...mapActions([ADD_ROLE_TYPE, REFRESH_SELECTED_NODE, DELETE_ROLE]),
+        ...mapActions([ADD_PLAYS, REFRESH_SELECTED_NODE, DELETE_PLAYS]),
       };
     },
     computed: {
@@ -122,7 +122,7 @@
         this.toggledRoleTypes = [];
       },
       addRoleTypes() {
-        this[ADD_ROLE_TYPE]({ label: this.selectedNodes[0].label, roleTypes: this.toggledRoleTypes })
+        this[ADD_PLAYS]({ schemaLabel: this.selectedNodes[0].label, roleTypes: this.toggledRoleTypes })
           .then(() => {
             this[REFRESH_SELECTED_NODE]();
             this.showNewRolesPanel = false;
@@ -133,7 +133,7 @@
           });
       },
       removeRoleType(role, index) {
-        this[DELETE_ROLE]({ label: this.selectedNodes[0].label, roleLabel: role, index })
+        this[DELETE_PLAYS]({ schemaLabel: this.selectedNodes[0].label, roleLabel: role, index })
           .then(() => {
             this[REFRESH_SELECTED_NODE]();
           })

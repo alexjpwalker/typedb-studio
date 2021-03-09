@@ -1,6 +1,6 @@
 import {
   ADD_OWNS,
-  ADD_ROLE_TYPE,
+  ADD_PLAYS,
   CANVAS_RESET,
   COMMIT_TX,
   CURRENT_DATABASE_CHANGED,
@@ -9,7 +9,7 @@ import {
   DEFINE_RELATION_TYPE,
   DEFINE_RULE,
   DELETE_OWNS,
-  DELETE_ROLE,
+  DELETE_PLAYS,
   DELETE_SCHEMA_CONCEPT,
   INITIALISE_VISUALISER,
   LOAD_SCHEMA,
@@ -199,6 +199,10 @@ export default {
     tx = await dispatch(OPEN_GRAKN_TX);
 
     const node = state.visFacade.getNode(state.selectedNodes[0].id);
+    await Promise.all(payload.attributeTypes.map(async (attributeType) => {
+      const valueType = (await tx.concepts().getAttributeType(attributeType)).getValueType();
+      node.attributes = [...node.attributes, { type: attributeType, valueType }];
+    }));
 
     const ownerConcept = await tx.concepts().getThingType(node.typeLabel);
     const edges = await CDB.getTypeEdges(ownerConcept, state.visFacade.getAllNodes().map(n => n.id));
@@ -222,29 +226,26 @@ export default {
       });
 
     const node = state.visFacade.getNode(state.selectedNodes[0].id);
-    node.attributes = Object.values(node.attributes).sort((a, b) => ((a.typeLabel > b.typeLabel) ? 1 : -1));
+    node.attributes = node.attributes.sort((a, b) => ((a.type > b.type) ? 1 : -1));
     node.attributes.splice(payload.index, 1);
     state.visFacade.updateNode(node);
 
     // delete edge to attribute type
-    tx = await dispatch(OPEN_GRAKN_TX);
-
     const edgesIds = state.visFacade.edgesConnectedToNode(state.selectedNodes[0].id);
 
     edgesIds
       .filter(edgeId => (state.visFacade.getEdge(edgeId).to === payload.attributeLabel) &&
         ((state.visFacade.getEdge(edgeId).label === 'owns') || (state.visFacade.getEdge(edgeId).hiddenLabel === 'owns')))
       .forEach((edgeId) => { state.visFacade.deleteEdge(edgeId); });
-
-    tx.close();
   },
 
-  async [ADD_ROLE_TYPE]({ state, dispatch }, payload) {
+  async [ADD_PLAYS]({ state, dispatch }, payload) {
     let tx = await dispatch(OPEN_GRAKN_TX);
 
     // add role types to schema concept
     await Promise.all(payload.roleTypes.map(async (roleType) => {
-      await state.schemaHandler.addPlaysRole(payload.label, roleType);
+      const [relationLabel, roleLabel] = roleType.split(':');
+      await state.schemaHandler.addPlaysRole(payload.schemaLabel, relationLabel, roleLabel);
     }));
 
     await dispatch(COMMIT_TX, tx)
@@ -258,10 +259,10 @@ export default {
     const node = state.visFacade.getNode(state.selectedNodes[0].id);
 
     const edges = await Promise.all(payload.roleTypes.map(async (roleType) => {
-      const relationTypes = await (await (await tx.getSchemaConcept(roleType)).relations()).collect();
+      const [relationLabel, _] = roleType.split(':');
+      const relationType = await tx.concepts().getRelationType(relationLabel);
       node.roles = [...node.roles, roleType];
-
-      return Promise.all(relationTypes.map(async relType => CDB.getTypeEdges(relType, state.visFacade.getAllNodes().map(n => n.id))));
+      return CDB.getTypeEdges(relationType, state.visFacade.getAllNodes().map(n => n.id));
     })).then(edges => edges.flatMap(x => x));
 
     state.visFacade.addToCanvas({ nodes: [], edges: edges.flatMap(x => x) });
@@ -269,14 +270,11 @@ export default {
     state.visFacade.updateNode(node);
   },
 
-  async [DELETE_ROLE]({ state, dispatch }, payload) {
+  async [DELETE_PLAYS]({ state, dispatch }, payload) {
     let tx = await dispatch(OPEN_GRAKN_TX);
 
-    const type = await tx.getSchemaConcept(state.selectedNodes[0].label);
-
-    if (await (await type.instances()).next()) throw Error('Cannot remove role type from schema concept with instances.');
-
-    await state.schemaHandler.deletePlaysRole(payload);
+    const [relationLabel, roleLabel] = payload.roleLabel.split(':');
+    await state.schemaHandler.deletePlaysRole(payload.schemaLabel, relationLabel, roleLabel);
 
     await dispatch(COMMIT_TX, tx)
       .catch((e) => {
@@ -291,20 +289,16 @@ export default {
     state.visFacade.updateNode(node);
 
     // delete role edge
-    tx = await dispatch(OPEN_GRAKN_TX);
-
     const edgesIds = state.visFacade.edgesConnectedToNode(state.selectedNodes[0].id);
     edgesIds
-      .filter(edgeId => (state.visFacade.getEdge(edgeId).to === state.selectedNodes[0].id) &&
-        ((state.visFacade.getEdge(edgeId).label === payload.roleLabel) || (state.visFacade.getEdge(edgeId).hiddenLabel === payload.roleLabel)))
+      .filter(edgeId => (state.visFacade.getEdge(edgeId).to === state.selectedNodes[0].id) && (state.visFacade.getEdge(edgeId).from === relationLabel) &&
+        ((state.visFacade.getEdge(edgeId).label === roleLabel) || (state.visFacade.getEdge(edgeId).hiddenLabel === roleLabel)))
       .forEach((edgeId) => { state.visFacade.deleteEdge(edgeId); });
-
-    tx.close();
   },
 
   async [DEFINE_RELATION_TYPE]({ state, dispatch }, payload) {
     let tx = await dispatch(OPEN_GRAKN_TX);
-    await state.schemaHandler.defineRelationType(payload);
+    await state.schemaHandler.defineRelationType(payload.relationLabel, payload.superType);
 
     // define and relate roles to relation type
     await Promise.all(payload.defineRoles.map(async (roleType) => {
@@ -323,7 +317,8 @@ export default {
 
     // add roles to relation type
     await Promise.all(payload.roleTypes.map(async (roleType) => {
-      await state.schemaHandler.addPlaysRole(payload.relationLabel, roleType);
+      const [relationLabel, roleLabel] = roleType.split(':');
+      await state.schemaHandler.addPlaysRole(payload.relationLabel, relationLabel, roleLabel);
     }));
 
     await dispatch(COMMIT_TX, tx)
@@ -337,8 +332,7 @@ export default {
 
     tx = await dispatch(OPEN_GRAKN_TX);
 
-    const concept = await tx.getSchemaConcept(payload.relationLabel);
-    concept.label = payload.relationLabel;
+    const concept = await tx.concepts().getRelationType(payload.relationLabel);
 
     const node = await CDB.getTypeNode(concept);
     const edges = await CDB.getTypeEdges(concept, [node.id, ...state.visFacade.getAllNodes().map(n => n.id)]);

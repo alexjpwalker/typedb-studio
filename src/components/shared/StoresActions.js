@@ -1,23 +1,17 @@
-
-
 // Schema Design store actions
 export const DEFINE_ENTITY_TYPE = 'define-entity-type';
 export const DEFINE_ATTRIBUTE_TYPE = 'define-attribute-type';
 export const DEFINE_RELATION_TYPE = 'define-relation-type';
-export const DEFINE_ROLE = 'define-role';
 export const DELETE_TYPE = 'delete-type';
 export const DELETE_SCHEMA_CONCEPT = 'delete-schema-concept';
 export const ADD_OWNS = 'add-owns';
 export const DELETE_OWNS = 'delete-owns';
 export const LOAD_SCHEMA = 'load-schema';
-export const ADD_TYPE = 'add-type';
 export const COMMIT_TX = 'commit-tx';
 export const REFRESH_SELECTED_NODE = 'refresh-selected-node';
-export const DELETE_PLAYS_ROLE = 'delete-plays-role';
-export const DELETE_RELATES_ROLE = 'delete-relates-role';
 export const DEFINE_RULE = 'define-rule';
-export const ADD_ROLE_TYPE = 'add-role-type';
-export const DELETE_ROLE = 'delete-tole';
+export const ADD_PLAYS = 'add-plays';
+export const DELETE_PLAYS = 'delete-plays';
 export const OPEN_GRAKN_TX = 'open-grakn-tx';
 
 
