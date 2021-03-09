@@ -7,7 +7,8 @@ export const DEFINE_RELATION_TYPE = 'define-relation-type';
 export const DEFINE_ROLE = 'define-role';
 export const DELETE_TYPE = 'delete-type';
 export const DELETE_SCHEMA_CONCEPT = 'delete-schema-concept';
-export const DELETE_ATTRIBUTE = 'delete-attribute';
+export const ADD_OWNS = 'add-owns';
+export const DELETE_OWNS = 'delete-owns';
 export const LOAD_SCHEMA = 'load-schema';
 export const ADD_TYPE = 'add-type';
 export const COMMIT_TX = 'commit-tx';
@@ -28,7 +29,6 @@ export const UPDATE_NODES_COLOUR = 'update-nodes-colour';
 export const DELETE_SELECTED_NODES = 'delete-selected-nodes';
 export const LOAD_NEIGHBOURS = 'load-neighbours';
 export const LOAD_ATTRIBUTES = 'load-attributes';
-export const ADD_ATTRIBUTE_TYPE = 'add-attribute-types';
 
 
 // Common actions shared by the two canvas stores (SchemaDesign && DataManagement)

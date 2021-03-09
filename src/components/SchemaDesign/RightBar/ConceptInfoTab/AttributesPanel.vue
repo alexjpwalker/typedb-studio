@@ -48,7 +48,7 @@
 </template>
 
 <script>
-  import { ADD_ATTRIBUTE_TYPE, REFRESH_SELECTED_NODE, DELETE_ATTRIBUTE } from '@/components/shared/StoresActions';
+  import { ADD_OWNS, REFRESH_SELECTED_NODE, DELETE_OWNS } from '@/components/shared/StoresActions';
   import { createNamespacedHelpers } from 'vuex';
   
   export default {
@@ -77,7 +77,7 @@
       // methods
       this.$options.methods = {
         ...(this.$options.methods || {}),
-        ...mapActions([ADD_ATTRIBUTE_TYPE, REFRESH_SELECTED_NODE, DELETE_ATTRIBUTE]),
+        ...mapActions([ADD_OWNS, REFRESH_SELECTED_NODE, DELETE_OWNS]),
       };
     },
     computed: {
@@ -123,7 +123,7 @@
         this.toggledAttributeTypes = [];
       },
       addAttributeTypes() {
-        this[ADD_ATTRIBUTE_TYPE]({ label: this.selectedNodes[0].label, attributeTypes: this.toggledAttributeTypes })
+        this[ADD_OWNS]({ schemaLabel: this.selectedNodes[0].label, attributeTypes: this.toggledAttributeTypes })
           .then(() => {
             this[REFRESH_SELECTED_NODE]();
             this.showNewAttributesPanel = false;
@@ -134,7 +134,7 @@
           });
       },
       removeAttributeType(type, index) {
-        this[DELETE_ATTRIBUTE]({ label: this.selectedNodes[0].label, attributeLabel: type, index })
+        this[DELETE_OWNS]({ schemaLabel: this.selectedNodes[0].label, attributeLabel: type, index })
           .then(() => {
             this[REFRESH_SELECTED_NODE]();
           })

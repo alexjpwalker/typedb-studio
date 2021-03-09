@@ -1,5 +1,5 @@
 import {
-  ADD_ATTRIBUTE_TYPE,
+  ADD_OWNS,
   ADD_ROLE_TYPE,
   CANVAS_RESET,
   COMMIT_TX,
@@ -8,7 +8,7 @@ import {
   DEFINE_ENTITY_TYPE,
   DEFINE_RELATION_TYPE,
   DEFINE_RULE,
-  DELETE_ATTRIBUTE,
+  DELETE_OWNS,
   DELETE_ROLE,
   DELETE_SCHEMA_CONCEPT,
   INITIALISE_VISUALISER,
@@ -182,12 +182,12 @@ export default {
     tx.close();
   },
 
-  async [ADD_ATTRIBUTE_TYPE]({ state, dispatch }, payload) {
+  async [ADD_OWNS]({ state, dispatch }, payload) {
     let tx = await dispatch(OPEN_GRAKN_TX);
 
     // add attribute types to schema concept
     await Promise.all(payload.attributeTypes.map(async (attributeType) => {
-      await state.schemaHandler.addAttribute(payload.label, attributeType);
+      await state.schemaHandler.addAttribute(payload.schemaLabel, attributeType);
     }));
 
     await dispatch(COMMIT_TX, tx)
@@ -200,13 +200,43 @@ export default {
 
     const node = state.visFacade.getNode(state.selectedNodes[0].id);
 
-    const ownerConcept = await tx.getSchemaConcept(node.typeLabel);
+    const ownerConcept = await tx.concepts().getThingType(node.typeLabel);
     const edges = await CDB.getTypeEdges(ownerConcept, state.visFacade.getAllNodes().map(n => n.id));
 
     state.visFacade.addToCanvas({ nodes: [], edges });
 
     tx.close();
     state.visFacade.updateNode(node);
+  },
+
+  async [DELETE_OWNS]({ state, dispatch }, payload) {
+    let tx = await dispatch(OPEN_GRAKN_TX);
+
+    await state.schemaHandler.deleteAttribute(payload.schemaLabel, payload.attributeLabel);
+
+    await dispatch(COMMIT_TX, tx)
+      .catch((e) => {
+        tx.close();
+        logger.error(e.stack);
+        throw e;
+      });
+
+    const node = state.visFacade.getNode(state.selectedNodes[0].id);
+    node.attributes = Object.values(node.attributes).sort((a, b) => ((a.typeLabel > b.typeLabel) ? 1 : -1));
+    node.attributes.splice(payload.index, 1);
+    state.visFacade.updateNode(node);
+
+    // delete edge to attribute type
+    tx = await dispatch(OPEN_GRAKN_TX);
+
+    const edgesIds = state.visFacade.edgesConnectedToNode(state.selectedNodes[0].id);
+
+    edgesIds
+      .filter(edgeId => (state.visFacade.getEdge(edgeId).to === payload.attributeLabel) &&
+        ((state.visFacade.getEdge(edgeId).label === 'owns') || (state.visFacade.getEdge(edgeId).hiddenLabel === 'owns')))
+      .forEach((edgeId) => { state.visFacade.deleteEdge(edgeId); });
+
+    tx.close();
   },
 
   async [ADD_ROLE_TYPE]({ state, dispatch }, payload) {
@@ -218,11 +248,11 @@ export default {
     }));
 
     await dispatch(COMMIT_TX, tx)
-      .catch((e) => {
-        tx.close();
-        logger.error(e.stack);
-        throw e;
-      });
+        .catch((e) => {
+          tx.close();
+          logger.error(e.stack);
+          throw e;
+        });
     tx = await dispatch(OPEN_GRAKN_TX);
 
     const node = state.visFacade.getNode(state.selectedNodes[0].id);
@@ -237,37 +267,6 @@ export default {
     state.visFacade.addToCanvas({ nodes: [], edges: edges.flatMap(x => x) });
     tx.close();
     state.visFacade.updateNode(node);
-  },
-
-  async [DELETE_ATTRIBUTE]({ state, dispatch }, payload) {
-    let tx = await dispatch(OPEN_GRAKN_TX);
-
-    await state.schemaHandler.deleteAttribute(payload);
-
-    await dispatch(COMMIT_TX, tx)
-      .catch((e) => {
-        tx.close();
-        logger.error(e.stack);
-        throw e;
-      });
-
-    const node = state.visFacade.getNode(state.selectedNodes[0].id);
-    node.attributes = Object.values(node.attributes).sort((a, b) => ((a.type > b.type) ? 1 : -1));
-    node.attributes.splice(payload.index, 1);
-    state.visFacade.updateNode(node);
-
-    // delete edge to attribute type
-    tx = await dispatch(OPEN_GRAKN_TX);
-
-    const attributeTypeId = (await tx.getSchemaConcept(payload.attributeLabel)).id;
-    const edgesIds = state.visFacade.edgesConnectedToNode(state.selectedNodes[0].id);
-
-    edgesIds
-      .filter(edgeId => (state.visFacade.getEdge(edgeId).to === attributeTypeId) &&
-        ((state.visFacade.getEdge(edgeId).label === 'has') || (state.visFacade.getEdge(edgeId).hiddenLabel === 'has')))
-      .forEach((edgeId) => { state.visFacade.deleteEdge(edgeId); });
-
-    tx.close();
   },
 
   async [DELETE_ROLE]({ state, dispatch }, payload) {
