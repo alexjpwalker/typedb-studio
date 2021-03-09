@@ -338,9 +338,9 @@
       },
       async superType(val) {
         if (val !== 'entity') { // if sup-typing an entity do not show inherited attributes in has panel to avoid duplicated attributes
-          const graknTx = await this[OPEN_GRAKN_TX]();
-          const sup = await graknTx.getSchemaConcept(val);
-          this.supAttributes = await Promise.all((await (await sup.attributes()).collect()).map(async x => x.label()));
+          const tx = await this[OPEN_GRAKN_TX]();
+          const superType = await tx.concepts().getEntityType(val);
+          this.supAttributes = await superType.asRemote(tx).getOwns().map(x => x.getLabel()).collect();
           this.hasAttributes = this.hasAttributes.filter(x => !this.supAttributes.includes(x));
         } else {
           this.hasAttributes = this.metaTypeInstances.attributes;

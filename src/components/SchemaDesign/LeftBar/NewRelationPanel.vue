@@ -445,18 +445,15 @@
         if (val !== 'relation') { // if super type is not 'relation' then compute roles of supertype for inheriting and overriding
           this.newRoles = [];
 
-          const graknTx = await this[OPEN_GRAKN_TX]();
-          const RelationType = await graknTx.getSchemaConcept(val);
+          const tx = await this[OPEN_GRAKN_TX]();
+          const superType = await tx.concepts().getRelationType(val);
 
-          this.superRelatipnshipTypeRoles = await Promise.all((await (await RelationType.roles()).collect()).map(async role => role.label()));
-
-
+          this.superRelatipnshipTypeRoles = await superType.asRemote(tx).getRelates().map(role => role.getLabel()).collect();
           this.overridenRoles.push(...this.superRelatipnshipTypeRoles.map(role => ({ label: role, override: false })));
 
-          const sup = await graknTx.getSchemaConcept(val);
-          this.supAttributes = await Promise.all((await (await sup.attributes()).collect()).map(async x => x.label()));
+          this.supAttributes = await superType.asRemote(tx).getOwns().map(x => x.getLabel()).collect();
           this.hasAttributes = this.hasAttributes.filter(x => !this.supAttributes.includes(x));
-          graknTx.close();
+          tx.close();
         } else {
           this.resetPanel();
 
@@ -486,7 +483,7 @@
         if (this.relationLabel === '') {
           this.$notifyError('Cannot define Relation Type without Relation Label');
         } else if (this.superType === 'relation' && !this.newRoles[0].length && !this.toggledRoleTypes.length) {
-          this.$notifyError('Cannot define Relation Type without atleast one related role');
+          this.$notifyError('Cannot define Relation Type without at least one related role');
         } else {
           let overrideError = false;
 
@@ -495,7 +492,7 @@
           });
 
           if (overrideError) {
-            this.$notifyError('Cannot define Relation Type with an empty overriden role');
+            this.$notifyError('Cannot define Relation Type with an empty overridden role');
           } else {
             this.showSpinner = true;
 

@@ -29,11 +29,11 @@ const { SessionType, TransactionType } = Grakn;
 
 export default {
   async [OPEN_GRAKN_TX]({ commit }) {
-    const graknTx = await global.graknSession.transaction(TransactionType.WRITE);
+    const tx = await global.graknSession.transaction(TransactionType.WRITE);
     if (!global.graknTx) global.graknTx = {};
-    global.graknTx.schemaDesign = graknTx;
-    commit('setSchemaHandler', new SchemaHandler(graknTx));
-    return graknTx;
+    global.graknTx.schemaDesign = tx;
+    commit('setSchemaHandler', new SchemaHandler(tx));
+    return tx;
   },
 
   async [CURRENT_DATABASE_CHANGED]({ state, dispatch, commit }, database) {
@@ -48,9 +48,9 @@ export default {
   },
 
   async [UPDATE_METATYPE_INSTANCES]({ dispatch, commit }) {
-    const graknTx = await dispatch(OPEN_GRAKN_TX);
-    const metaTypeInstances = await loadMetaTypeInstances(graknTx);
-    graknTx.close();
+    const tx = await dispatch(OPEN_GRAKN_TX);
+    const metaTypeInstances = await loadMetaTypeInstances(tx);
+    tx.close();
     commit('metaTypeInstances', metaTypeInstances);
   },
 
@@ -66,13 +66,13 @@ export default {
   },
 
   async [LOAD_SCHEMA]({ state, commit, dispatch }) {
-    const graknTx = await dispatch(OPEN_GRAKN_TX);
+    const tx = await dispatch(OPEN_GRAKN_TX);
 
     try {
       if (!state.visFacade) return;
       commit('loadingSchema', true);
 
-      const answers = await graknTx.query().match('match $x sub thing;').collect();
+      const answers = await tx.query().match('match $x sub thing;').collect();
 
       const data = await CDB.buildTypes(answers);
       data.nodes = updateNodePositions(data.nodes);
@@ -80,22 +80,22 @@ export default {
       state.visFacade.addToCanvas({ nodes: data.nodes, edges: data.edges });
       state.visFacade.fitGraphToWindow();
 
-      data.nodes = await computeAttributes(data.nodes, graknTx);
-      data.nodes = await computeRoles(data.nodes, graknTx);
+      data.nodes = await computeAttributes(data.nodes, tx);
+      data.nodes = await computeRoles(data.nodes, tx);
       state.visFacade.updateNode(data.nodes);
 
-      graknTx.close();
+      tx.close();
       commit('loadingSchema', false);
     } catch (e) {
       logger.error(e.stack);
-      graknTx.close();
+      tx.close();
       commit('loadingSchema', false);
       throw e;
     }
   },
 
-  async [COMMIT_TX](store, graknTx) {
-    return graknTx.commit();
+  async [COMMIT_TX](store, tx) {
+    return tx.commit();
   },
 
   async [DEFINE_ENTITY_TYPE]({ state, dispatch }, payload) {
@@ -128,7 +128,7 @@ export default {
 
     const concept = await tx.concepts().getEntityType(payload.entityLabel);
 
-    const node = CDB.getTypeNode(concept);
+    const node = await CDB.getTypeNode(concept);
     const edges = await CDB.getTypeEdges(concept, [node.id, ...state.visFacade.getAllNodes().map(n => n.id)]);
 
     state.visFacade.addToCanvas({ nodes: [node], edges });
@@ -141,10 +141,10 @@ export default {
   },
 
   async [DEFINE_ATTRIBUTE_TYPE]({ state, dispatch }, payload) {
-    let graknTx = await dispatch(OPEN_GRAKN_TX);
+    let tx = await dispatch(OPEN_GRAKN_TX);
 
-    // define entity type
-    await state.schemaHandler.defineAttributeType(payload);
+    // define attribute type
+    await state.schemaHandler.defineAttributeType(payload.attributeLabel, payload.superType, payload.valueType);
 
     // add attribute types to attribute type
     await Promise.all(payload.attributeTypes.map(async (attributeType) => {
@@ -153,100 +153,100 @@ export default {
 
     // add roles to attribute type
     await Promise.all(payload.roleTypes.map(async (roleType) => {
-      await state.schemaHandler.addPlaysRole(payload.attributeLabel, roleType);
+      const [relationLabel, roleLabel] = roleType.split(':');
+      await state.schemaHandler.addPlaysRole(payload.attributeLabel, relationLabel, roleLabel);
     }));
 
-    await dispatch(COMMIT_TX, graknTx)
+    await dispatch(COMMIT_TX, tx)
       .catch((e) => {
-        graknTx.close();
+        tx.close();
         logger.error(e.stack);
         throw e;
       });
 
     await dispatch(UPDATE_METATYPE_INSTANCES);
 
-    graknTx = await dispatch(OPEN_GRAKN_TX);
+    tx = await dispatch(OPEN_GRAKN_TX);
 
-    const concept = await graknTx.getSchemaConcept(payload.attributeLabel);
-    concept.label = payload.attributeLabel;
+    const concept = await tx.concepts().getAttributeType(payload.attributeLabel);
 
-    const node = CDB.getTypeNode(concept);
+    const node = await CDB.getTypeNode(concept);
     const edges = await CDB.getTypeEdges(concept, [node.id, ...state.visFacade.getAllNodes().map(n => n.id)]);
 
     state.visFacade.addToCanvas({ nodes: [node], edges });
 
     // attach attributes and roles to visnode and update on graph to render the right bar attributes
-    let nodes = await computeAttributes([node], graknTx);
-    nodes = await computeRoles(nodes, graknTx);
+    let nodes = await computeAttributes([node], tx);
+    nodes = await computeRoles(nodes, tx);
     state.visFacade.updateNode(nodes);
-    graknTx.close();
+    tx.close();
   },
 
   async [ADD_ATTRIBUTE_TYPE]({ state, dispatch }, payload) {
-    let graknTx = await dispatch(OPEN_GRAKN_TX);
+    let tx = await dispatch(OPEN_GRAKN_TX);
 
     // add attribute types to schema concept
     await Promise.all(payload.attributeTypes.map(async (attributeType) => {
       await state.schemaHandler.addAttribute(payload.label, attributeType);
     }));
 
-    await dispatch(COMMIT_TX, graknTx)
+    await dispatch(COMMIT_TX, tx)
       .catch((e) => {
-        graknTx.close();
+        tx.close();
         logger.error(e.stack);
         throw e;
       });
-    graknTx = await dispatch(OPEN_GRAKN_TX);
+    tx = await dispatch(OPEN_GRAKN_TX);
 
     const node = state.visFacade.getNode(state.selectedNodes[0].id);
 
-    const ownerConcept = await graknTx.getSchemaConcept(node.typeLabel);
+    const ownerConcept = await tx.getSchemaConcept(node.typeLabel);
     const edges = await CDB.getTypeEdges(ownerConcept, state.visFacade.getAllNodes().map(n => n.id));
 
     state.visFacade.addToCanvas({ nodes: [], edges });
 
-    graknTx.close();
+    tx.close();
     state.visFacade.updateNode(node);
   },
 
   async [ADD_ROLE_TYPE]({ state, dispatch }, payload) {
-    let graknTx = await dispatch(OPEN_GRAKN_TX);
+    let tx = await dispatch(OPEN_GRAKN_TX);
 
     // add role types to schema concept
     await Promise.all(payload.roleTypes.map(async (roleType) => {
       await state.schemaHandler.addPlaysRole(payload.label, roleType);
     }));
 
-    await dispatch(COMMIT_TX, graknTx)
+    await dispatch(COMMIT_TX, tx)
       .catch((e) => {
-        graknTx.close();
+        tx.close();
         logger.error(e.stack);
         throw e;
       });
-    graknTx = await dispatch(OPEN_GRAKN_TX);
+    tx = await dispatch(OPEN_GRAKN_TX);
 
     const node = state.visFacade.getNode(state.selectedNodes[0].id);
 
     const edges = await Promise.all(payload.roleTypes.map(async (roleType) => {
-      const relationTypes = await (await (await graknTx.getSchemaConcept(roleType)).relations()).collect();
+      const relationTypes = await (await (await tx.getSchemaConcept(roleType)).relations()).collect();
       node.roles = [...node.roles, roleType];
 
       return Promise.all(relationTypes.map(async relType => CDB.getTypeEdges(relType, state.visFacade.getAllNodes().map(n => n.id))));
     })).then(edges => edges.flatMap(x => x));
 
     state.visFacade.addToCanvas({ nodes: [], edges: edges.flatMap(x => x) });
-    graknTx.close();
+    tx.close();
     state.visFacade.updateNode(node);
   },
 
   async [DELETE_ATTRIBUTE]({ state, dispatch }, payload) {
-    let graknTx = await dispatch(OPEN_GRAKN_TX);
+    let tx = await dispatch(OPEN_GRAKN_TX);
 
     await state.schemaHandler.deleteAttribute(payload);
 
-    await dispatch(COMMIT_TX, graknTx)
+    await dispatch(COMMIT_TX, tx)
       .catch((e) => {
-        graknTx.close();
+        tx.close();
         logger.error(e.stack);
         throw e;
       });
@@ -257,9 +257,9 @@ export default {
     state.visFacade.updateNode(node);
 
     // delete edge to attribute type
-    graknTx = await dispatch(OPEN_GRAKN_TX);
+    tx = await dispatch(OPEN_GRAKN_TX);
 
-    const attributeTypeId = (await graknTx.getSchemaConcept(payload.attributeLabel)).id;
+    const attributeTypeId = (await tx.getSchemaConcept(payload.attributeLabel)).id;
     const edgesIds = state.visFacade.edgesConnectedToNode(state.selectedNodes[0].id);
 
     edgesIds
@@ -267,21 +267,21 @@ export default {
         ((state.visFacade.getEdge(edgeId).label === 'has') || (state.visFacade.getEdge(edgeId).hiddenLabel === 'has')))
       .forEach((edgeId) => { state.visFacade.deleteEdge(edgeId); });
 
-    graknTx.close();
+    tx.close();
   },
 
   async [DELETE_ROLE]({ state, dispatch }, payload) {
-    let graknTx = await dispatch(OPEN_GRAKN_TX);
+    let tx = await dispatch(OPEN_GRAKN_TX);
 
-    const type = await graknTx.getSchemaConcept(state.selectedNodes[0].label);
+    const type = await tx.getSchemaConcept(state.selectedNodes[0].label);
 
     if (await (await type.instances()).next()) throw Error('Cannot remove role type from schema concept with instances.');
 
     await state.schemaHandler.deletePlaysRole(payload);
 
-    await dispatch(COMMIT_TX, graknTx)
+    await dispatch(COMMIT_TX, tx)
       .catch((e) => {
-        graknTx.close();
+        tx.close();
         logger.error(e.stack);
         throw e;
       });
@@ -292,7 +292,7 @@ export default {
     state.visFacade.updateNode(node);
 
     // delete role edge
-    graknTx = await dispatch(OPEN_GRAKN_TX);
+    tx = await dispatch(OPEN_GRAKN_TX);
 
     const edgesIds = state.visFacade.edgesConnectedToNode(state.selectedNodes[0].id);
     edgesIds
@@ -300,11 +300,11 @@ export default {
         ((state.visFacade.getEdge(edgeId).label === payload.roleLabel) || (state.visFacade.getEdge(edgeId).hiddenLabel === payload.roleLabel)))
       .forEach((edgeId) => { state.visFacade.deleteEdge(edgeId); });
 
-    graknTx.close();
+    tx.close();
   },
 
   async [DEFINE_RELATION_TYPE]({ state, dispatch }, payload) {
-    let graknTx = await dispatch(OPEN_GRAKN_TX);
+    let tx = await dispatch(OPEN_GRAKN_TX);
     await state.schemaHandler.defineRelationType(payload);
 
     // define and relate roles to relation type
@@ -327,30 +327,30 @@ export default {
       await state.schemaHandler.addPlaysRole(payload.relationLabel, roleType);
     }));
 
-    await dispatch(COMMIT_TX, graknTx)
+    await dispatch(COMMIT_TX, tx)
       .catch((e) => {
-        graknTx.close();
+        tx.close();
         logger.error(e.stack);
         throw e;
       });
 
     await dispatch(UPDATE_METATYPE_INSTANCES);
 
-    graknTx = await dispatch(OPEN_GRAKN_TX);
+    tx = await dispatch(OPEN_GRAKN_TX);
 
-    const concept = await graknTx.getSchemaConcept(payload.relationLabel);
+    const concept = await tx.getSchemaConcept(payload.relationLabel);
     concept.label = payload.relationLabel;
 
-    const node = CDB.getTypeNode(concept);
+    const node = await CDB.getTypeNode(concept);
     const edges = await CDB.getTypeEdges(concept, [node.id, ...state.visFacade.getAllNodes().map(n => n.id)]);
 
     state.visFacade.addToCanvas({ nodes: [node], edges });
 
     // attach attributes and roles to visnode and update on graph to render the right bar attributes
-    let nodes = await computeAttributes([node], graknTx);
-    nodes = await computeRoles(nodes, graknTx);
+    let nodes = await computeAttributes([node], tx);
+    nodes = await computeRoles(nodes, tx);
     state.visFacade.updateNode(nodes);
-    graknTx.close();
+    tx.close();
   },
 
   async [DELETE_SCHEMA_CONCEPT]({ state, dispatch, commit }, payload) {
@@ -399,14 +399,14 @@ export default {
   },
 
   async [DEFINE_RULE]({ state, dispatch }, payload) {
-    const graknTx = await dispatch(OPEN_GRAKN_TX);
+    const tx = await dispatch(OPEN_GRAKN_TX);
 
     // define rule
     await state.schemaHandler.defineRule(payload.ruleLabel, payload.when, payload.then);
 
-    await dispatch(COMMIT_TX, graknTx)
+    await dispatch(COMMIT_TX, tx)
       .catch((e) => {
-        graknTx.close();
+        tx.close();
         logger.error(e.stack);
         throw e;
       });

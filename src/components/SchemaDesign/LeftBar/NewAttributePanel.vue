@@ -23,7 +23,7 @@
 
         <div class="row">
           <div class="data-type-options">
-            <div class="list-label">data type</div>
+            <div class="list-label">value</div>
             <div v-if="superType === 'attribute'" class="btn data-type-btn" :class="(showDataTypeList) ? 'type-list-shown' : ''" @click="toggleDataList"><div class="type-btn-text" >{{valueType}}</div><div class="type-btn-caret"><vue-icon className="vue-icon" icon="caret-down"></vue-icon></div></div>
             <div v-else class="inherited-data-type">{{valueType}}</div>
 
@@ -409,15 +409,13 @@
       },
       async superType(val) {
         if (val !== 'attribute') { // if super type is not 'attribute' set data type of super type
-          const graknTx = await this[OPEN_GRAKN_TX]();
-          const attributeType = await graknTx.getSchemaConcept(val);
-          this.valueType = (await attributeType.valueType()).toLowerCase();
+          const tx = await this[OPEN_GRAKN_TX]();
+          const superType = await tx.concepts().getAttributeType(val);
+          this.valueType = superType.getValueType().toLowerCase();
           this.showDataTypeList = false;
-
-          const sup = await graknTx.getSchemaConcept(val);
-          this.supAttributes = await Promise.all((await (await sup.attributes()).collect()).map(async x => x.label()));
+          this.supAttributes = await superType.asRemote(tx).getOwns().map(x => x.getLabel()).collect();
           this.hasAttributes = this.hasAttributes.filter(x => !this.supAttributes.includes(x));
-          graknTx.close();
+          tx.close();
         } else {
           this.valueType = this.valueTypes[0];
 

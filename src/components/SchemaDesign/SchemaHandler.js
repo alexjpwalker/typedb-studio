@@ -1,3 +1,6 @@
+import { AttributeType } from "grakn-client/concept/type/AttributeType";
+const { ValueType } = AttributeType;
+
 let tx;
 
 function SchemaHandler(graknTx) {
