@@ -1,6 +1,6 @@
-import { RemoteType, Type, Grakn, Stream, ThingImpl, ConceptImpl, RemoteConceptImpl, Concept } from "../../../dependencies_internal";
+import { RemoteType, Type, GraknClient, Stream, ThingImpl, ConceptImpl, RemoteConceptImpl, Concept } from "../../../dependencies_internal";
 import ConceptProto from "grakn-protocol/protobuf/concept_pb";
-import Transaction = Grakn.Transaction;
+import Transaction = GraknClient.Transaction;
 export declare abstract class TypeImpl extends ConceptImpl implements Type {
     private readonly _label;
     private readonly _root;

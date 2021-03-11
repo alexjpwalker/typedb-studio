@@ -18,61 +18,26 @@
  * under the License.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GraknOptions = void 0;
-const dependencies_internal_1 = require("./dependencies_internal");
+exports.GraknClusterOptions = exports.GraknOptions = void 0;
 class GraknOptions {
-    constructor() {
-        this._infer = null;
-        this._traceInference = null;
-        this._explain = null;
-        this._batchSize = null;
-        this._sessionIdleTimeoutMillis = null;
-        this._schemaLockAcquireTimeoutMillis = null;
-    }
-    infer() {
-        return this._infer;
-    }
-    setInfer(infer) {
-        this._infer = infer;
-        return this;
-    }
-    traceInference() {
-        return this._traceInference;
-    }
-    setTraceInference(traceInference) {
-        this._traceInference = traceInference;
-        return this;
-    }
-    explain() {
-        return this._explain;
-    }
-    setExplain(explain) {
-        this._explain = explain;
-        return this;
-    }
-    batchSize() {
-        return this._batchSize;
-    }
-    setBatchSize(batchSize) {
-        if (batchSize < 1) {
-            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.NONPOSITIVE_BATCH_SIZE.message(batchSize));
-        }
-        this._batchSize = batchSize;
-        return this;
-    }
-    sessionIdleTimeoutMillis() {
-        return this._sessionIdleTimeoutMillis;
-    }
-    setSessionIdleTimeoutMillis(sessionIdleTimeoutMillis) {
-        this._sessionIdleTimeoutMillis = sessionIdleTimeoutMillis;
-        return this;
-    }
-    schemaLockAcquireTimeoutMillis() {
-        return this._schemaLockAcquireTimeoutMillis;
-    }
-    setSchemaLockAcquireTimeoutMillis(schemaLockAcquireTimeoutMillis) {
-        this._schemaLockAcquireTimeoutMillis = schemaLockAcquireTimeoutMillis;
-        return this;
+    constructor(obj = {}) {
+        Object.assign(this, obj);
     }
 }
 exports.GraknOptions = GraknOptions;
+class GraknClusterOptions extends GraknOptions {
+    constructor(obj = {}) {
+        super(obj);
+    }
+}
+exports.GraknClusterOptions = GraknClusterOptions;
+(function (GraknOptions) {
+    function core(options = {}) {
+        return new GraknOptions(options);
+    }
+    GraknOptions.core = core;
+    function cluster(options = {}) {
+        return new GraknClusterOptions(options);
+    }
+    GraknOptions.cluster = cluster;
+})(GraknOptions = exports.GraknOptions || (exports.GraknOptions = {}));

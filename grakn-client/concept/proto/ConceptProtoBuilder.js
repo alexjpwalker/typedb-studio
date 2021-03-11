@@ -28,15 +28,13 @@ const dependencies_internal_1 = require("../../dependencies_internal");
 var ConceptProtoBuilder;
 (function (ConceptProtoBuilder) {
     function thing(thing) {
-        return new concept_pb_1.default.Thing()
-            .setIid(dependencies_internal_1.Bytes.hexStringToBytes(thing.getIID()))
-            .setEncoding(thingEncoding(thing));
+        return new concept_pb_1.default.Thing().setIid(dependencies_internal_1.Bytes.hexStringToBytes(thing.getIID()));
     }
     ConceptProtoBuilder.thing = thing;
     function type(type) {
         const typeProto = new concept_pb_1.default.Type()
             .setLabel(type.getLabel())
-            .setEncoding(typeEncoding(type));
+            .setEncoding(encoding(type));
         if (type.isRoleType()) {
             typeProto.setScope(type.getScope());
         }
@@ -85,22 +83,7 @@ var ConceptProtoBuilder;
         }
     }
     ConceptProtoBuilder.valueType = valueType;
-    function thingEncoding(thing) {
-        if (thing.isEntity()) {
-            return concept_pb_1.default.Thing.Encoding.ENTITY;
-        }
-        else if (thing.isRelation()) {
-            return concept_pb_1.default.Thing.Encoding.RELATION;
-        }
-        else if (thing.isAttribute()) {
-            return concept_pb_1.default.Thing.Encoding.ATTRIBUTE;
-        }
-        else {
-            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Concept.BAD_ENCODING.message(thing));
-        }
-    }
-    ConceptProtoBuilder.thingEncoding = thingEncoding;
-    function typeEncoding(type) {
+    function encoding(type) {
         if (type.isEntityType()) {
             return concept_pb_1.default.Type.Encoding.ENTITY_TYPE;
         }
@@ -120,5 +103,5 @@ var ConceptProtoBuilder;
             throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Concept.BAD_ENCODING.message(type));
         }
     }
-    ConceptProtoBuilder.typeEncoding = typeEncoding;
+    ConceptProtoBuilder.encoding = encoding;
 })(ConceptProtoBuilder = exports.ConceptProtoBuilder || (exports.ConceptProtoBuilder = {}));

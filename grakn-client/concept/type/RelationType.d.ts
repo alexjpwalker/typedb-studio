@@ -1,9 +1,10 @@
-import { ThingType, RemoteThingType, Relation, RoleType, Grakn, Merge, Stream } from "../../dependencies_internal";
-import Transaction = Grakn.Transaction;
+import { ThingType, RemoteThingType, Relation, RoleType, GraknClient, Stream } from "../../dependencies_internal";
+import Transaction = GraknClient.Transaction;
 export interface RelationType extends ThingType {
     asRemote(transaction: Transaction): RemoteRelationType;
 }
-export interface RemoteRelationType extends Merge<RemoteThingType, RelationType> {
+export interface RemoteRelationType extends RemoteThingType {
+    asRemote(transaction: Transaction): RemoteRelationType;
     create(): Promise<Relation>;
     getRelates(roleLabel: string): Promise<RoleType>;
     getRelates(): Stream<RoleType>;
@@ -13,5 +14,4 @@ export interface RemoteRelationType extends Merge<RemoteThingType, RelationType>
     setSupertype(relationType: RelationType): Promise<void>;
     getSubtypes(): Stream<RelationType>;
     getInstances(): Stream<Relation>;
-    asRemote(transaction: Transaction): RemoteRelationType;
 }

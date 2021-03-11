@@ -1,5 +1,5 @@
-import Transaction = Grakn.Transaction;
-import { Attribute, BooleanAttribute, DateTimeAttribute, DoubleAttribute, LongAttribute, StringAttribute, Grakn, RemoteThingType, ThingType, Merge, Stream } from "../../dependencies_internal";
+import Transaction = GraknClient.Transaction;
+import { Attribute, BooleanAttribute, DateTimeAttribute, DoubleAttribute, LongAttribute, StringAttribute, GraknClient, RemoteThingType, ThingType, Merge, Stream } from "../../dependencies_internal";
 import ValueType = AttributeType.ValueType;
 import ConceptProto from "grakn-protocol/protobuf/concept_pb";
 import ValueClass = AttributeType.ValueClass;

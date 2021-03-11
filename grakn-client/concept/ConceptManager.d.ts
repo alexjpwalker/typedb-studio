@@ -1,7 +1,7 @@
-import { ThingType, EntityType, RelationType, AttributeType, RPCTransaction, Thing } from "../dependencies_internal";
+import { ThingType, EntityType, RelationType, AttributeType, TransactionRPC, Thing } from "../dependencies_internal";
 export declare class ConceptManager {
-    private readonly _rpcTransaction;
-    constructor(rpcTransaction: RPCTransaction);
+    private readonly _transactionRPC;
+    constructor(transactionRPC: TransactionRPC);
     getRootThingType(): Promise<ThingType>;
     getRootEntityType(): Promise<EntityType>;
     getRootRelationType(): Promise<RelationType>;

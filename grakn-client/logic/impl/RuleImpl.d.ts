@@ -1,6 +1,6 @@
-import { RemoteRule, Rule, Grakn, RPCTransaction } from "../../dependencies_internal";
+import { RemoteRule, Rule, GraknClient, TransactionRPC } from "../../dependencies_internal";
 import LogicProto from "grakn-protocol/protobuf/logic_pb";
-import Transaction = Grakn.Transaction;
+import Transaction = GraknClient.Transaction;
 export declare class RuleImpl implements Rule {
     private readonly _label;
     private readonly _when;
@@ -29,5 +29,5 @@ export declare class RemoteRuleImpl implements RemoteRule {
     asRemote(transaction: Transaction): RemoteRule;
     isRemote(): boolean;
     protected execute(method: LogicProto.Rule.Req): Promise<LogicProto.Rule.Res>;
-    protected get rpcTransaction(): RPCTransaction;
+    protected get rpcTransaction(): TransactionRPC;
 }

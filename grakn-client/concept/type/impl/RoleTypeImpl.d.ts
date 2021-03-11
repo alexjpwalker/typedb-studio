@@ -1,7 +1,7 @@
-import { ThingTypeImpl, RemoteThingTypeImpl, RoleType, RemoteRoleType, Grakn, RelationTypeImpl, Stream, TypeImpl } from "../../../dependencies_internal";
+import { ThingTypeImpl, RoleType, RemoteRoleType, GraknClient, RelationTypeImpl, Stream, TypeImpl, RemoteTypeImpl } from "../../../dependencies_internal";
 import ConceptProto from "grakn-protocol/protobuf/concept_pb";
-import Transaction = Grakn.Transaction;
-export declare class RoleTypeImpl extends ThingTypeImpl implements RoleType {
+import Transaction = GraknClient.Transaction;
+export declare class RoleTypeImpl extends TypeImpl implements RoleType {
     private readonly _scope;
     protected constructor(label: string, scope: string, isRoot: boolean);
     static of(typeProto: ConceptProto.Type): RoleTypeImpl;
@@ -11,7 +11,7 @@ export declare class RoleTypeImpl extends ThingTypeImpl implements RoleType {
     toString(): string;
     isRoleType(): boolean;
 }
-export declare class RemoteRoleTypeImpl extends RemoteThingTypeImpl implements RemoteRoleType {
+export declare class RemoteRoleTypeImpl extends RemoteTypeImpl implements RemoteRoleType {
     private readonly _scope;
     constructor(transaction: Transaction, label: string, scope: string, isRoot: boolean);
     getScope(): string;

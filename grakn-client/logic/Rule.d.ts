@@ -1,5 +1,5 @@
-import { Grakn } from "../dependencies_internal";
-import Transaction = Grakn.Transaction;
+import { GraknClient } from "../dependencies_internal";
+import Transaction = GraknClient.Transaction;
 export interface Rule {
     getLabel(): string;
     getWhen(): string;

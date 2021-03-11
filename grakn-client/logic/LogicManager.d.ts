@@ -1,7 +1,7 @@
-import { RPCTransaction, Rule, RuleImpl, Stream } from "../dependencies_internal";
+import { TransactionRPC, Rule, RuleImpl, Stream } from "../dependencies_internal";
 export declare class LogicManager {
-    private readonly _rpcTransaction;
-    constructor(rpcTransaction: RPCTransaction);
+    private readonly _transactionRPC;
+    constructor(transactionRPC: TransactionRPC);
     putRule(label: string, when: string, then: string): Promise<Rule>;
     getRule(label: string): Promise<Rule>;
     getRules(): Stream<RuleImpl>;

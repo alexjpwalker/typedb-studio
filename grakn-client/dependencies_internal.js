@@ -81,15 +81,24 @@ __exportStar(require("./concept/Concept"), exports);
 __exportStar(require("./concept/ConceptManager"), exports);
 /* query */
 __exportStar(require("./query/QueryManager"), exports);
-/* rpc */
-__exportStar(require("./rpc/GraknClient"), exports);
-__exportStar(require("./rpc/RPCDatabaseManager"), exports);
-__exportStar(require("./rpc/RPCSession"), exports);
-__exportStar(require("./rpc/RPCTransaction"), exports);
-__exportStar(require("./rpc/Stream"), exports);
 /* ROOT */
-__exportStar(require("./Grakn"), exports);
+__exportStar(require("./GraknClient"), exports);
 __exportStar(require("./GraknOptions"), exports);
-__exportStar(require("./GraknProtoBuilder"), exports);
+/* rpc */
+__exportStar(require("./rpc/ClientRPC"), exports);
+__exportStar(require("./rpc/DatabaseManagerRPC"), exports);
+__exportStar(require("./rpc/DatabaseRPC"), exports);
+__exportStar(require("./rpc/SessionRPC"), exports);
+__exportStar(require("./rpc/TransactionRPC"), exports);
+__exportStar(require("./rpc/Stream"), exports);
+/* rpc.cluster */
+__exportStar(require("./rpc/cluster/FailsafeTask"), exports);
+__exportStar(require("./rpc/cluster/ServerAddress"), exports);
+__exportStar(require("./rpc/cluster/ClientClusterRPC"), exports);
+__exportStar(require("./rpc/cluster/DatabaseManagerClusterRPC"), exports);
+__exportStar(require("./rpc/cluster/DatabaseClusterRPC"), exports);
+__exportStar(require("./rpc/cluster/SessionClusterRPC"), exports);
+/* common.proto */
+__exportStar(require("./common/proto/OptionsProtoBuilder"), exports);
 /* concept.proto */
 __exportStar(require("./concept/proto/ConceptProtoBuilder"), exports);

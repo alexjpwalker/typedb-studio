@@ -1,6 +1,6 @@
-import { Concept, RemoteConcept, Grakn } from "../../dependencies_internal";
+import { Concept, RemoteConcept, GraknClient } from "../../dependencies_internal";
 export declare abstract class ConceptImpl implements Concept {
-    abstract asRemote(transaction: Grakn.Transaction): RemoteConcept;
+    abstract asRemote(transaction: GraknClient.Transaction): RemoteConcept;
     isRemote(): boolean;
     isType(): boolean;
     isThingType(): boolean;
@@ -15,7 +15,7 @@ export declare abstract class ConceptImpl implements Concept {
     abstract equals(concept: Concept): boolean;
 }
 export declare abstract class RemoteConceptImpl implements RemoteConcept {
-    abstract asRemote(transaction: Grakn.Transaction): RemoteConcept;
+    abstract asRemote(transaction: GraknClient.Transaction): RemoteConcept;
     abstract delete(): Promise<void>;
     abstract isDeleted(): Promise<boolean>;
     isRemote(): boolean;

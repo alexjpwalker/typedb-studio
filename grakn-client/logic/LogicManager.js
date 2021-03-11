@@ -22,12 +22,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LogicManager = void 0;
-const logic_pb_1 = __importDefault(require("grakn-protocol/protobuf/logic_pb"));
 const dependencies_internal_1 = require("../dependencies_internal");
+const logic_pb_1 = __importDefault(require("grakn-protocol/protobuf/logic_pb"));
 const transaction_pb_1 = __importDefault(require("grakn-protocol/protobuf/transaction_pb"));
 class LogicManager {
-    constructor(rpcTransaction) {
-        this._rpcTransaction = rpcTransaction;
+    constructor(transactionRPC) {
+        this._transactionRPC = transactionRPC;
     }
     async putRule(label, when, then) {
         const req = new logic_pb_1.default.LogicManager.Req()
@@ -53,11 +53,11 @@ class LogicManager {
     async execute(logicManagerReq) {
         const transactionReq = new transaction_pb_1.default.Transaction.Req()
             .setLogicManagerReq(logicManagerReq);
-        return await this._rpcTransaction.execute(transactionReq, res => res.getLogicManagerRes());
+        return await this._transactionRPC.execute(transactionReq, res => res.getLogicManagerRes());
     }
     ruleStream(method, ruleListGetter) {
         const request = new transaction_pb_1.default.Transaction.Req().setLogicManagerReq(method);
-        return this._rpcTransaction.stream(request, res => ruleListGetter(res.getLogicManagerRes()).map(dependencies_internal_1.RuleImpl.of));
+        return this._transactionRPC.stream(request, res => ruleListGetter(res.getLogicManagerRes()).map(dependencies_internal_1.RuleImpl.of));
     }
 }
 exports.LogicManager = LogicManager;

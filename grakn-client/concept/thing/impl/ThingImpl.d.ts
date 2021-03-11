@@ -1,11 +1,12 @@
-import { Thing, RemoteThing, Attribute, AttributeType, BooleanAttributeType, DateTimeAttributeType, DoubleAttributeType, LongAttributeType, StringAttributeType, RoleType, Grakn, ThingTypeImpl, RoleTypeImpl, Stream, RelationImpl, TypeImpl, AttributeImpl, BooleanAttributeImpl, DateTimeAttributeImpl, DoubleAttributeImpl, LongAttributeImpl, StringAttributeImpl, ConceptImpl, RemoteConceptImpl, Concept } from "../../../dependencies_internal";
+import { Thing, RemoteThing, Attribute, AttributeType, BooleanAttributeType, DateTimeAttributeType, DoubleAttributeType, LongAttributeType, StringAttributeType, RoleType, GraknClient, ThingTypeImpl, RoleTypeImpl, Stream, RelationImpl, TypeImpl, AttributeImpl, BooleanAttributeImpl, DateTimeAttributeImpl, DoubleAttributeImpl, LongAttributeImpl, StringAttributeImpl, ConceptImpl, RemoteConceptImpl, Concept } from "../../../dependencies_internal";
 import ConceptProto from "grakn-protocol/protobuf/concept_pb";
-import Transaction = Grakn.Transaction;
+import Transaction = GraknClient.Transaction;
 import ValueClass = AttributeType.ValueClass;
 export declare abstract class ThingImpl extends ConceptImpl implements Thing {
     private readonly _iid;
     protected constructor(iid: string);
     getIID(): string;
+    abstract getType(): ThingTypeImpl;
     isRemote(): boolean;
     isThing(): boolean;
     toString(): string;
@@ -14,10 +15,10 @@ export declare abstract class ThingImpl extends ConceptImpl implements Thing {
 }
 export declare abstract class RemoteThingImpl extends RemoteConceptImpl implements RemoteThing {
     private readonly _iid;
-    private readonly _rpcTransaction;
+    private readonly _transactionRPC;
     protected constructor(transaction: Transaction, iid: string);
     getIID(): string;
-    getType(): Promise<ThingTypeImpl>;
+    abstract getType(): ThingTypeImpl;
     isInferred(): Promise<boolean>;
     isRemote(): boolean;
     isThing(): boolean;

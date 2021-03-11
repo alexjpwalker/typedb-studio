@@ -1,7 +1,7 @@
-import { RPCTransaction, GraknOptions, Stream, ConceptMap, Numeric, ConceptMapGroup, NumericGroup } from "../dependencies_internal";
+import { TransactionRPC, GraknOptions, Stream, ConceptMap, Numeric, ConceptMapGroup, NumericGroup } from "../dependencies_internal";
 export declare class QueryManager {
-    private readonly _rpcTransaction;
-    constructor(transaction: RPCTransaction);
+    private readonly _transactionRPC;
+    constructor(transaction: TransactionRPC);
     match(query: string, options?: GraknOptions): Stream<ConceptMap>;
     matchAggregate(query: string, options?: GraknOptions): Promise<Numeric>;
     matchGroup(query: string, options?: GraknOptions): Stream<ConceptMapGroup>;

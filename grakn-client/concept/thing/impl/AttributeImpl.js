@@ -21,7 +21,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DateTimeAttributeImpl = exports.RemoteStringAttributeImpl = exports.StringAttributeImpl = exports.RemoteDoubleAttributeImpl = exports.DoubleAttributeImpl = exports.RemoteLongAttributeImpl = exports.LongAttributeImpl = exports.RemoteBooleanAttributeImpl = exports.BooleanAttributeImpl = exports.RemoteAttributeImpl = exports.AttributeImpl = void 0;
+exports.RemoteDateTimeAttributeImpl = exports.DateTimeAttributeImpl = exports.RemoteStringAttributeImpl = exports.StringAttributeImpl = exports.RemoteDoubleAttributeImpl = exports.DoubleAttributeImpl = exports.RemoteLongAttributeImpl = exports.LongAttributeImpl = exports.RemoteBooleanAttributeImpl = exports.BooleanAttributeImpl = exports.RemoteAttributeImpl = exports.AttributeImpl = void 0;
 const dependencies_internal_1 = require("../../../dependencies_internal");
 const concept_pb_1 = __importDefault(require("grakn-protocol/protobuf/concept_pb"));
 class AttributeImpl extends dependencies_internal_1.ThingImpl {
@@ -59,10 +59,6 @@ class RemoteAttributeImpl extends dependencies_internal_1.RemoteThingImpl {
         const method = new concept_pb_1.default.Thing.Req().setAttributeGetOwnersReq(getOwnersReq);
         return this.thingStream(method, res => res.getAttributeGetOwnersRes().getThingsList());
     }
-    async getType() {
-        const res = await this.execute(new concept_pb_1.default.Thing.Req().setThingGetTypeReq(new concept_pb_1.default.Thing.GetType.Req()));
-        return dependencies_internal_1.ThingTypeImpl.of(res.getThingGetTypeRes().getThingType());
-    }
     isBoolean() {
         return false;
     }
@@ -84,15 +80,19 @@ class RemoteAttributeImpl extends dependencies_internal_1.RemoteThingImpl {
 }
 exports.RemoteAttributeImpl = RemoteAttributeImpl;
 class BooleanAttributeImpl extends AttributeImpl {
-    constructor(iid, value) {
+    constructor(iid, type, value) {
         super(iid);
+        this._type = type;
         this._value = value;
     }
     static of(protoThing) {
-        return new BooleanAttributeImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()), protoThing.getValue().getBoolean());
+        return new BooleanAttributeImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()), dependencies_internal_1.BooleanAttributeTypeImpl.of(protoThing.getType()), protoThing.getValue().getBoolean());
     }
     asRemote(transaction) {
-        return new RemoteBooleanAttributeImpl(transaction, this.getIID(), this._value);
+        return new RemoteBooleanAttributeImpl(transaction, this.getIID(), this._type, this._value);
+    }
+    getType() {
+        return this._type;
     }
     getValue() {
         return this._value;
@@ -103,19 +103,19 @@ class BooleanAttributeImpl extends AttributeImpl {
 }
 exports.BooleanAttributeImpl = BooleanAttributeImpl;
 class RemoteBooleanAttributeImpl extends RemoteAttributeImpl {
-    constructor(transaction, iid, value) {
+    constructor(transaction, iid, type, value) {
         super(transaction, iid);
+        this._type = type;
         this._value = value;
     }
     getValue() {
         return this._value;
     }
-    async getType() {
-        const res = await this.execute(new concept_pb_1.default.Thing.Req().setThingGetTypeReq(new concept_pb_1.default.Thing.GetType.Req()));
-        return dependencies_internal_1.BooleanAttributeTypeImpl.of(res.getThingGetTypeRes().getThingType());
+    getType() {
+        return this._type;
     }
     asRemote(transaction) {
-        return new RemoteBooleanAttributeImpl(transaction, this.getIID(), this._value);
+        return new RemoteBooleanAttributeImpl(transaction, this.getIID(), this._type, this._value);
     }
     isBoolean() {
         return true;
@@ -123,15 +123,19 @@ class RemoteBooleanAttributeImpl extends RemoteAttributeImpl {
 }
 exports.RemoteBooleanAttributeImpl = RemoteBooleanAttributeImpl;
 class LongAttributeImpl extends AttributeImpl {
-    constructor(iid, value) {
+    constructor(iid, type, value) {
         super(iid);
+        this._type = type;
         this._value = value;
     }
     static of(protoThing) {
-        return new LongAttributeImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()), protoThing.getValue().getLong());
+        return new LongAttributeImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()), dependencies_internal_1.LongAttributeTypeImpl.of(protoThing.getType()), protoThing.getValue().getLong());
     }
     asRemote(transaction) {
-        return new RemoteLongAttributeImpl(transaction, this.getIID(), this._value);
+        return new RemoteLongAttributeImpl(transaction, this.getIID(), this._type, this._value);
+    }
+    getType() {
+        return this._type;
     }
     getValue() {
         return this._value;
@@ -142,19 +146,19 @@ class LongAttributeImpl extends AttributeImpl {
 }
 exports.LongAttributeImpl = LongAttributeImpl;
 class RemoteLongAttributeImpl extends RemoteAttributeImpl {
-    constructor(transaction, iid, value) {
+    constructor(transaction, iid, type, value) {
         super(transaction, iid);
+        this._type = type;
         this._value = value;
     }
     getValue() {
         return this._value;
     }
-    async getType() {
-        const res = await this.execute(new concept_pb_1.default.Thing.Req().setThingGetTypeReq(new concept_pb_1.default.Thing.GetType.Req()));
-        return dependencies_internal_1.LongAttributeTypeImpl.of(res.getThingGetTypeRes().getThingType());
+    getType() {
+        return this._type;
     }
     asRemote(transaction) {
-        return new RemoteLongAttributeImpl(transaction, this.getIID(), this._value);
+        return new RemoteLongAttributeImpl(transaction, this.getIID(), this._type, this._value);
     }
     isLong() {
         return true;
@@ -162,15 +166,19 @@ class RemoteLongAttributeImpl extends RemoteAttributeImpl {
 }
 exports.RemoteLongAttributeImpl = RemoteLongAttributeImpl;
 class DoubleAttributeImpl extends AttributeImpl {
-    constructor(iid, value) {
+    constructor(iid, type, value) {
         super(iid);
+        this._type = type;
         this._value = value;
     }
     static of(protoThing) {
-        return new DoubleAttributeImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()), protoThing.getValue().getDouble());
+        return new DoubleAttributeImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()), dependencies_internal_1.DoubleAttributeTypeImpl.of(protoThing.getType()), protoThing.getValue().getDouble());
     }
     asRemote(transaction) {
-        return new RemoteDoubleAttributeImpl(transaction, this.getIID(), this._value);
+        return new RemoteDoubleAttributeImpl(transaction, this.getIID(), this._type, this._value);
+    }
+    getType() {
+        return this._type;
     }
     getValue() {
         return this._value;
@@ -181,19 +189,19 @@ class DoubleAttributeImpl extends AttributeImpl {
 }
 exports.DoubleAttributeImpl = DoubleAttributeImpl;
 class RemoteDoubleAttributeImpl extends RemoteAttributeImpl {
-    constructor(transaction, iid, value) {
+    constructor(transaction, iid, type, value) {
         super(transaction, iid);
+        this._type = type;
         this._value = value;
     }
     getValue() {
         return this._value;
     }
-    async getType() {
-        const res = await this.execute(new concept_pb_1.default.Thing.Req().setThingGetTypeReq(new concept_pb_1.default.Thing.GetType.Req()));
-        return dependencies_internal_1.DoubleAttributeTypeImpl.of(res.getThingGetTypeRes().getThingType());
+    getType() {
+        return this._type;
     }
     asRemote(transaction) {
-        return new RemoteDoubleAttributeImpl(transaction, this.getIID(), this._value);
+        return new RemoteDoubleAttributeImpl(transaction, this.getIID(), this._type, this._value);
     }
     isDouble() {
         return true;
@@ -201,15 +209,19 @@ class RemoteDoubleAttributeImpl extends RemoteAttributeImpl {
 }
 exports.RemoteDoubleAttributeImpl = RemoteDoubleAttributeImpl;
 class StringAttributeImpl extends AttributeImpl {
-    constructor(iid, value) {
+    constructor(iid, type, value) {
         super(iid);
+        this._type = type;
         this._value = value;
     }
     static of(protoThing) {
-        return new StringAttributeImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()), protoThing.getValue().getString());
+        return new StringAttributeImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()), dependencies_internal_1.StringAttributeTypeImpl.of(protoThing.getType()), protoThing.getValue().getString());
     }
     asRemote(transaction) {
-        return new RemoteStringAttributeImpl(transaction, this.getIID(), this._value);
+        return new RemoteStringAttributeImpl(transaction, this.getIID(), this._type, this._value);
+    }
+    getType() {
+        return this._type;
     }
     getValue() {
         return this._value;
@@ -220,19 +232,19 @@ class StringAttributeImpl extends AttributeImpl {
 }
 exports.StringAttributeImpl = StringAttributeImpl;
 class RemoteStringAttributeImpl extends RemoteAttributeImpl {
-    constructor(transaction, iid, value) {
+    constructor(transaction, iid, type, value) {
         super(transaction, iid);
+        this._type = type;
         this._value = value;
     }
     getValue() {
         return this._value;
     }
-    async getType() {
-        const res = await this.execute(new concept_pb_1.default.Thing.Req().setThingGetTypeReq(new concept_pb_1.default.Thing.GetType.Req()));
-        return dependencies_internal_1.StringAttributeTypeImpl.of(res.getThingGetTypeRes().getThingType());
+    getType() {
+        return this._type;
     }
     asRemote(transaction) {
-        return new RemoteStringAttributeImpl(transaction, this.getIID(), this._value);
+        return new RemoteStringAttributeImpl(transaction, this.getIID(), this._type, this._value);
     }
     isString() {
         return true;
@@ -240,15 +252,19 @@ class RemoteStringAttributeImpl extends RemoteAttributeImpl {
 }
 exports.RemoteStringAttributeImpl = RemoteStringAttributeImpl;
 class DateTimeAttributeImpl extends AttributeImpl {
-    constructor(iid, value) {
+    constructor(iid, type, value) {
         super(iid);
+        this._type = type;
         this._value = value;
     }
     static of(protoThing) {
-        return new DateTimeAttributeImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()), new Date(protoThing.getValue().getDateTime()));
+        return new DateTimeAttributeImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()), dependencies_internal_1.DateTimeAttributeTypeImpl.of(protoThing.getType()), new Date(protoThing.getValue().getDateTime()));
     }
     asRemote(transaction) {
-        return new RemoteDateTimeAttributeImpl(transaction, this.getIID(), this._value);
+        return new RemoteDateTimeAttributeImpl(transaction, this.getIID(), this._type, this._value);
+    }
+    getType() {
+        return this._type;
     }
     getValue() {
         return this._value;
@@ -259,27 +275,28 @@ class DateTimeAttributeImpl extends AttributeImpl {
 }
 exports.DateTimeAttributeImpl = DateTimeAttributeImpl;
 class RemoteDateTimeAttributeImpl extends RemoteAttributeImpl {
-    constructor(transaction, iid, value) {
+    constructor(transaction, iid, type, value) {
         super(transaction, iid);
+        this._type = type;
         this._value = value;
     }
     getValue() {
         return this._value;
     }
-    async getType() {
-        const res = await this.execute(new concept_pb_1.default.Thing.Req().setThingGetTypeReq(new concept_pb_1.default.Thing.GetType.Req()));
-        return dependencies_internal_1.DateTimeAttributeTypeImpl.of(res.getThingGetTypeRes().getThingType());
+    getType() {
+        return this._type;
     }
     asRemote(transaction) {
-        return new RemoteDateTimeAttributeImpl(transaction, this.getIID(), this._value);
+        return new RemoteDateTimeAttributeImpl(transaction, this.getIID(), this._type, this._value);
     }
     isDateTime() {
         return true;
     }
 }
+exports.RemoteDateTimeAttributeImpl = RemoteDateTimeAttributeImpl;
 (function (AttributeImpl) {
     function of(thingProto) {
-        switch (thingProto.getValueType()) {
+        switch (thingProto.getType().getValueType()) {
             case concept_pb_1.default.AttributeType.ValueType.BOOLEAN:
                 return BooleanAttributeImpl.of(thingProto);
             case concept_pb_1.default.AttributeType.ValueType.LONG:
@@ -291,7 +308,7 @@ class RemoteDateTimeAttributeImpl extends RemoteAttributeImpl {
             case concept_pb_1.default.AttributeType.ValueType.DATETIME:
                 return DateTimeAttributeImpl.of(thingProto);
             default:
-                throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Concept.BAD_VALUE_TYPE.message(thingProto.getValueType()));
+                throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Concept.BAD_VALUE_TYPE.message(thingProto.getType().getValueType()));
         }
     }
     AttributeImpl.of = of;

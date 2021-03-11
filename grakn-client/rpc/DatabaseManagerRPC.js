@@ -21,22 +21,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RPCDatabaseManager = void 0;
+exports.DatabaseManagerRPC = void 0;
 const dependencies_internal_1 = require("../dependencies_internal");
 const database_pb_1 = __importDefault(require("grakn-protocol/protobuf/database_pb"));
-const { Database } = database_pb_1.default;
-class RPCDatabaseManager {
+const DatabaseRPC_1 = require("./DatabaseRPC");
+class DatabaseManagerRPC {
     constructor(client) {
         this._grpcClient = client;
     }
     contains(name) {
         if (!name)
-            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.MISSING_DB_NAME.message());
-        const req = new Database.Contains.Req().setName(name);
+            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.MISSING_DB_NAME);
+        const req = new database_pb_1.default.Database.Contains.Req().setName(name);
         return new Promise((resolve, reject) => {
             this._grpcClient.database_contains(req, (err, res) => {
                 if (err)
-                    reject(err);
+                    reject(new dependencies_internal_1.GraknClientError(err));
                 else
                     resolve(res.getContains());
             });
@@ -44,40 +44,36 @@ class RPCDatabaseManager {
     }
     create(name) {
         if (!name)
-            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.MISSING_DB_NAME.message());
-        const req = new Database.Create.Req().setName(name);
+            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.MISSING_DB_NAME);
+        const req = new database_pb_1.default.Database.Create.Req().setName(name);
         return new Promise((resolve, reject) => {
             this._grpcClient.database_create(req, (err) => {
                 if (err)
-                    reject(err);
+                    reject(new dependencies_internal_1.GraknClientError(err));
                 else
                     resolve();
             });
         });
     }
-    delete(name) {
-        if (!name)
-            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.MISSING_DB_NAME.message());
-        const req = new Database.Delete.Req().setName(name);
-        return new Promise((resolve, reject) => {
-            this._grpcClient.database_delete(req, (err) => {
-                if (err)
-                    reject(err);
-                else
-                    resolve();
-            });
-        });
+    async get(name) {
+        if (await this.contains(name))
+            return new DatabaseRPC_1.DatabaseRPC(this._grpcClient, name);
+        else
+            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.DB_DOES_NOT_EXIST);
     }
     all() {
-        const allRequest = new Database.All.Req();
+        const allRequest = new database_pb_1.default.Database.All.Req();
         return new Promise((resolve, reject) => {
             this._grpcClient.database_all(allRequest, (err, res) => {
                 if (err)
-                    reject(err);
+                    reject(new dependencies_internal_1.GraknClientError(err));
                 else
-                    resolve(res.getNamesList());
+                    resolve(res.getNamesList().map(name => new DatabaseRPC_1.DatabaseRPC(this._grpcClient, name)));
             });
         });
     }
+    grpcClient() {
+        return this._grpcClient;
+    }
 }
-exports.RPCDatabaseManager = RPCDatabaseManager;
+exports.DatabaseManagerRPC = DatabaseManagerRPC;

@@ -10,6 +10,5 @@ export declare namespace ConceptProtoBuilder {
     function stringAttributeValue(value: string): ConceptProto.Attribute.Value;
     function dateTimeAttributeValue(value: Date): ConceptProto.Attribute.Value;
     function valueType(valueType: AttributeType.ValueType): ConceptProto.AttributeType.ValueType;
-    function thingEncoding(thing: Thing): ConceptProto.Thing.Encoding;
-    function typeEncoding(type: Type): ConceptProto.Type.Encoding;
+    function encoding(type: Type): ConceptProto.Type.Encoding;
 }

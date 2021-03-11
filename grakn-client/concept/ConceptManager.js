@@ -26,20 +26,20 @@ const dependencies_internal_1 = require("../dependencies_internal");
 const concept_pb_1 = __importDefault(require("grakn-protocol/protobuf/concept_pb"));
 const transaction_pb_1 = __importDefault(require("grakn-protocol/protobuf/transaction_pb"));
 class ConceptManager {
-    constructor(rpcTransaction) {
-        this._rpcTransaction = rpcTransaction;
+    constructor(transactionRPC) {
+        this._transactionRPC = transactionRPC;
     }
     async getRootThingType() {
         return await this.getThingType("thing");
     }
     async getRootEntityType() {
-        return await this.getThingType("entity");
+        return await this.getEntityType("entity");
     }
     async getRootRelationType() {
-        return await this.getThingType("relation");
+        return await this.getRelationType("relation");
     }
     async getRootAttributeType() {
-        return await this.getThingType("attribute");
+        return await this.getAttributeType("attribute");
     }
     async putEntityType(label) {
         const req = new concept_pb_1.default.ConceptManager.Req()
@@ -49,7 +49,7 @@ class ConceptManager {
     }
     async getEntityType(label) {
         const type = await this.getThingType(label);
-        if (type instanceof dependencies_internal_1.EntityTypeImpl)
+        if (type && type.isEntityType())
             return type;
         else
             return null;
@@ -62,7 +62,7 @@ class ConceptManager {
     }
     async getRelationType(label) {
         const type = await this.getThingType(label);
-        if (type instanceof dependencies_internal_1.RelationTypeImpl)
+        if (type && type.isRelationType())
             return type;
         else
             return null;
@@ -77,7 +77,7 @@ class ConceptManager {
     }
     async getAttributeType(label) {
         const type = await this.getThingType(label);
-        if (type instanceof dependencies_internal_1.AttributeTypeImpl)
+        if (type && type.isAttributeType())
             return type;
         else
             return null;
@@ -103,7 +103,7 @@ class ConceptManager {
     async execute(conceptManagerReq) {
         const transactionReq = new transaction_pb_1.default.Transaction.Req()
             .setConceptManagerReq(conceptManagerReq);
-        return await this._rpcTransaction.execute(transactionReq, res => res.getConceptManagerRes());
+        return await this._transactionRPC.execute(transactionReq, res => res.getConceptManagerRes());
     }
 }
 exports.ConceptManager = ConceptManager;

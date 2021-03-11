@@ -1,6 +1,6 @@
-import { AttributeImpl, AttributeType, BooleanAttributeImpl, BooleanAttributeType, DateTimeAttributeImpl, DateTimeAttributeType, DoubleAttributeImpl, DoubleAttributeType, Grakn, LongAttributeImpl, LongAttributeType, RemoteAttributeType, RemoteBooleanAttributeType, RemoteDateTimeAttributeType, RemoteDoubleAttributeType, RemoteLongAttributeType, RemoteStringAttributeType, RemoteThingTypeImpl, Stream, StringAttributeImpl, StringAttributeType, ThingTypeImpl } from "../../../dependencies_internal";
+import { AttributeImpl, AttributeType, BooleanAttributeImpl, BooleanAttributeType, DateTimeAttributeImpl, DateTimeAttributeType, DoubleAttributeImpl, DoubleAttributeType, GraknClient, LongAttributeImpl, LongAttributeType, RemoteAttributeType, RemoteBooleanAttributeType, RemoteDateTimeAttributeType, RemoteDoubleAttributeType, RemoteLongAttributeType, RemoteStringAttributeType, RemoteThingTypeImpl, Stream, StringAttributeImpl, StringAttributeType, ThingTypeImpl } from "../../../dependencies_internal";
 import ConceptProto from "grakn-protocol/protobuf/concept_pb";
-import Transaction = Grakn.Transaction;
+import Transaction = GraknClient.Transaction;
 import ValueType = AttributeType.ValueType;
 import ValueClass = AttributeType.ValueClass;
 export declare class AttributeTypeImpl extends ThingTypeImpl implements AttributeType {

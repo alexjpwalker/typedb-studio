@@ -59,14 +59,10 @@ class RemoteThingImpl extends dependencies_internal_1.RemoteConceptImpl {
         if (!iid)
             throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Concept.MISSING_IID.message());
         this._iid = iid;
-        this._rpcTransaction = transaction;
+        this._transactionRPC = transaction;
     }
     getIID() {
         return this._iid;
-    }
-    async getType() {
-        const response = await this.execute(new concept_pb_1.default.Thing.Req().setThingGetTypeReq(new concept_pb_1.default.Thing.GetType.Req()));
-        return dependencies_internal_1.TypeImpl.of(response.getThingGetTypeRes().getThingType());
     }
     async isInferred() {
         return (await this.execute(new concept_pb_1.default.Thing.Req().setThingIsInferredReq(new concept_pb_1.default.Thing.IsInferred.Req()))).getThingIsInferredRes().getInferred();
@@ -129,22 +125,22 @@ class RemoteThingImpl extends dependencies_internal_1.RemoteConceptImpl {
         await this.execute(new concept_pb_1.default.Thing.Req().setThingDeleteReq(new concept_pb_1.default.Thing.Delete.Req()));
     }
     async isDeleted() {
-        return !(await this._rpcTransaction.concepts().getThing(this._iid));
+        return !(await this._transactionRPC.concepts().getThing(this._iid));
     }
     get transaction() {
-        return this._rpcTransaction;
+        return this._transactionRPC;
     }
     typeStream(method, typeGetter) {
         const request = new transaction_pb_1.default.Transaction.Req().setThingReq(method.setIid(dependencies_internal_1.Bytes.hexStringToBytes(this._iid)));
-        return (this._rpcTransaction).stream(request, res => typeGetter(res.getThingRes()).map(dependencies_internal_1.TypeImpl.of));
+        return (this._transactionRPC).stream(request, res => typeGetter(res.getThingRes()).map(dependencies_internal_1.TypeImpl.of));
     }
     thingStream(method, thingGetter) {
         const request = new transaction_pb_1.default.Transaction.Req().setThingReq(method.setIid(dependencies_internal_1.Bytes.hexStringToBytes(this._iid)));
-        return this._rpcTransaction.stream(request, res => thingGetter(res.getThingRes()).map(ThingImpl.of));
+        return this._transactionRPC.stream(request, res => thingGetter(res.getThingRes()).map(ThingImpl.of));
     }
     execute(method) {
         const request = new transaction_pb_1.default.Transaction.Req().setThingReq(method.setIid(dependencies_internal_1.Bytes.hexStringToBytes(this._iid)));
-        return this._rpcTransaction.execute(request, res => res.getThingRes());
+        return this._transactionRPC.execute(request, res => res.getThingRes());
     }
     toString() {
         return `${RemoteThingImpl.name}[iid:${this._iid}]`;
@@ -153,15 +149,15 @@ class RemoteThingImpl extends dependencies_internal_1.RemoteConceptImpl {
 exports.RemoteThingImpl = RemoteThingImpl;
 (function (ThingImpl) {
     function of(thingProto) {
-        switch (thingProto.getEncoding()) {
-            case concept_pb_1.default.Thing.Encoding.ENTITY:
+        switch (thingProto.getType().getEncoding()) {
+            case concept_pb_1.default.Type.Encoding.ENTITY_TYPE:
                 return dependencies_internal_1.EntityImpl.of(thingProto);
-            case concept_pb_1.default.Thing.Encoding.RELATION:
+            case concept_pb_1.default.Type.Encoding.RELATION_TYPE:
                 return dependencies_internal_1.RelationImpl.of(thingProto);
-            case concept_pb_1.default.Thing.Encoding.ATTRIBUTE:
+            case concept_pb_1.default.Type.Encoding.ATTRIBUTE_TYPE:
                 return dependencies_internal_1.AttributeImpl.of(thingProto);
             default:
-                throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Concept.BAD_ENCODING.message(thingProto.getEncoding()));
+                throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Concept.BAD_ENCODING.message(thingProto.getType().getEncoding()));
         }
     }
     ThingImpl.of = of;

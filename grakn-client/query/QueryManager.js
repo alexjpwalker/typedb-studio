@@ -29,53 +29,53 @@ const transaction_pb_1 = __importDefault(require("grakn-protocol/protobuf/transa
 var Transaction = transaction_pb_1.default.Transaction;
 class QueryManager {
     constructor(transaction) {
-        this._rpcTransaction = transaction;
+        this._transactionRPC = transaction;
     }
     match(query, options) {
         const matchQuery = new Query.Req().setMatchReq(new Query.Match.Req().setQuery(query));
-        return this.iterateQuery(matchQuery, options ? options : new dependencies_internal_1.GraknOptions(), (res) => res.getQueryRes().getMatchRes().getAnswersList().map(dependencies_internal_1.ConceptMap.of));
+        return this.iterateQuery(matchQuery, options ? options : dependencies_internal_1.GraknOptions.core(), (res) => res.getQueryRes().getMatchRes().getAnswersList().map(dependencies_internal_1.ConceptMap.of));
     }
     matchAggregate(query, options) {
         const matchAggregateQuery = new Query.Req().setMatchAggregateReq(new Query.MatchAggregate.Req().setQuery(query));
-        return this.runQuery(matchAggregateQuery, options ? options : new dependencies_internal_1.GraknOptions(), (res) => dependencies_internal_1.Numeric.of(res.getQueryRes().getMatchAggregateRes().getAnswer()));
+        return this.runQuery(matchAggregateQuery, options ? options : dependencies_internal_1.GraknOptions.core(), (res) => dependencies_internal_1.Numeric.of(res.getQueryRes().getMatchAggregateRes().getAnswer()));
     }
     matchGroup(query, options) {
         const matchGroupQuery = new Query.Req().setMatchGroupReq(new Query.MatchGroup.Req().setQuery(query));
-        return this.iterateQuery(matchGroupQuery, options ? options : new dependencies_internal_1.GraknOptions(), (res) => res.getQueryRes().getMatchGroupRes().getAnswersList().map(dependencies_internal_1.ConceptMapGroup.of));
+        return this.iterateQuery(matchGroupQuery, options ? options : dependencies_internal_1.GraknOptions.core(), (res) => res.getQueryRes().getMatchGroupRes().getAnswersList().map(dependencies_internal_1.ConceptMapGroup.of));
     }
     matchGroupAggregate(query, options) {
         const matchGroupAggregateQuery = new Query.Req().setMatchGroupAggregateReq(new Query.MatchGroupAggregate.Req().setQuery(query));
-        return this.iterateQuery(matchGroupAggregateQuery, options ? options : new dependencies_internal_1.GraknOptions(), (res) => res.getQueryRes().getMatchGroupAggregateRes().getAnswersList().map(dependencies_internal_1.NumericGroup.of));
+        return this.iterateQuery(matchGroupAggregateQuery, options ? options : dependencies_internal_1.GraknOptions.core(), (res) => res.getQueryRes().getMatchGroupAggregateRes().getAnswersList().map(dependencies_internal_1.NumericGroup.of));
     }
     insert(query, options) {
         const insertQuery = new Query.Req().setInsertReq(new Query.Insert.Req().setQuery(query));
-        return this.iterateQuery(insertQuery, options ? options : new dependencies_internal_1.GraknOptions(), (res) => res.getQueryRes().getInsertRes().getAnswersList().map(dependencies_internal_1.ConceptMap.of));
+        return this.iterateQuery(insertQuery, options ? options : dependencies_internal_1.GraknOptions.core(), (res) => res.getQueryRes().getInsertRes().getAnswersList().map(dependencies_internal_1.ConceptMap.of));
     }
     delete(query, options) {
         const deleteQuery = new Query.Req().setDeleteReq(new Query.Delete.Req().setQuery(query));
-        return this.runQuery(deleteQuery, options ? options : new dependencies_internal_1.GraknOptions(), () => null);
+        return this.runQuery(deleteQuery, options ? options : dependencies_internal_1.GraknOptions.core(), () => null);
     }
     update(query, options) {
         const updateQuery = new Query.Req().setUpdateReq(new Query.Update.Req().setQuery(query));
-        return this.iterateQuery(updateQuery, options ? options : new dependencies_internal_1.GraknOptions(), (res) => res.getQueryRes().getUpdateRes().getAnswersList().map(dependencies_internal_1.ConceptMap.of));
+        return this.iterateQuery(updateQuery, options ? options : dependencies_internal_1.GraknOptions.core(), (res) => res.getQueryRes().getUpdateRes().getAnswersList().map(dependencies_internal_1.ConceptMap.of));
     }
     define(query, options) {
         const defineQuery = new Query.Req().setDefineReq(new Query.Define.Req().setQuery(query));
-        return this.runQuery(defineQuery, options ? options : new dependencies_internal_1.GraknOptions(), () => null);
+        return this.runQuery(defineQuery, options ? options : dependencies_internal_1.GraknOptions.core(), () => null);
     }
     undefine(query, options) {
         const undefineQuery = new Query.Req().setUndefineReq(new Query.Undefine.Req().setQuery(query));
-        return this.runQuery(undefineQuery, options ? options : new dependencies_internal_1.GraknOptions(), () => null);
+        return this.runQuery(undefineQuery, options ? options : dependencies_internal_1.GraknOptions.core(), () => null);
     }
     iterateQuery(request, options, responseReader) {
         const transactionRequest = new Transaction.Req()
-            .setQueryReq(request.setOptions(dependencies_internal_1.ProtoBuilder.options(options)));
-        return this._rpcTransaction.stream(transactionRequest, responseReader);
+            .setQueryReq(request.setOptions(dependencies_internal_1.OptionsProtoBuilder.options(options)));
+        return this._transactionRPC.stream(transactionRequest, responseReader);
     }
     async runQuery(request, options, mapper) {
         const transactionRequest = new Transaction.Req()
-            .setQueryReq(request.setOptions(dependencies_internal_1.ProtoBuilder.options(options)));
-        return this._rpcTransaction.execute(transactionRequest, mapper);
+            .setQueryReq(request.setOptions(dependencies_internal_1.OptionsProtoBuilder.options(options)));
+        return this._transactionRPC.execute(transactionRequest, mapper);
     }
 }
 exports.QueryManager = QueryManager;

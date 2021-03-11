@@ -69,7 +69,7 @@ class Numeric {
         if (this.isNumber())
             return this._numberValue;
         else
-            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Query.ILLEGAL_CAST.message("NaN", "number"));
+            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Internal.ILLEGAL_CAST.message("NaN", "number"));
     }
     static ofNumber(value) {
         return new Numeric(value);

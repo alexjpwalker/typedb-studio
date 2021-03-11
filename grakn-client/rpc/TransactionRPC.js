@@ -21,41 +21,42 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ResponseCollector = exports.RPCTransaction = void 0;
+exports.ResponseCollector = exports.TransactionRPC = void 0;
 const dependencies_internal_1 = require("../dependencies_internal");
 const transaction_pb_1 = __importDefault(require("grakn-protocol/protobuf/transaction_pb"));
-class RPCTransaction {
+class TransactionRPC {
     constructor(grpcClient, type) {
         this._type = type;
         this._conceptManager = new dependencies_internal_1.ConceptManager(this);
         this._logicManager = new dependencies_internal_1.LogicManager(this);
         this._queryManager = new dependencies_internal_1.QueryManager(this);
         this._collectors = new ResponseCollectors(this);
-        this._transactionWasClosed = false;
-        this._transactionWasOpened = false;
-        this._streamIsOpen = false;
+        this._isOpen = false;
         this._grpcClient = grpcClient;
     }
     async open(sessionId, options) {
         this.openTransactionStream();
-        this._streamIsOpen = true;
+        this._options = options;
+        this._isOpen = true;
         const openRequest = new transaction_pb_1.default.Transaction.Req()
             .setOpenReq(new transaction_pb_1.default.Transaction.Open.Req()
             .setSessionId(sessionId)
-            .setType(this._type === dependencies_internal_1.Grakn.TransactionType.READ ? transaction_pb_1.default.Transaction.Type.READ : transaction_pb_1.default.Transaction.Type.WRITE)
-            .setOptions(dependencies_internal_1.ProtoBuilder.options(options)));
+            .setType(this._type === dependencies_internal_1.TransactionType.READ ? transaction_pb_1.default.Transaction.Type.READ : transaction_pb_1.default.Transaction.Type.WRITE)
+            .setOptions(dependencies_internal_1.OptionsProtoBuilder.options(options)));
         const startTime = new Date().getTime();
         const res = await this.execute(openRequest, res => res.getOpenRes());
         const endTime = new Date().getTime();
         this._networkLatencyMillis = endTime - startTime - res.getProcessingTimeMillis();
-        this._transactionWasOpened = true;
         return this;
     }
     type() {
         return this._type;
     }
+    options() {
+        return this._options;
+    }
     isOpen() {
-        return this._transactionWasOpened && !this._transactionWasClosed;
+        return this._isOpen;
     }
     concepts() {
         return this._conceptManager;
@@ -82,13 +83,10 @@ class RPCTransaction {
         await this.execute(rollbackReq);
     }
     async close() {
-        if (this._streamIsOpen) {
-            this._streamIsOpen = false;
+        if (this._isOpen) {
+            this._isOpen = false;
+            this._collectors.clearWithError(new ErrorResponse(new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.TRANSACTION_CLOSED)));
             this._stream.end();
-        }
-        if (!this._transactionWasClosed) {
-            this._transactionWasClosed = true;
-            this._collectors.clearWithError(new ErrorResponse(new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.TRANSACTION_CLOSED.message())));
         }
     }
     execute(request, transformResponse = () => null) {
@@ -96,7 +94,6 @@ class RPCTransaction {
         const requestId = dependencies_internal_1.uuidv4();
         request.setId(requestId);
         this._collectors.put(requestId, responseCollector);
-        // TODO: we can optionally inject the callback here - perhaps that would be cleaner than using ResponseCollectors?
         this._stream.write(request);
         return responseCollector.take().then(transformResponse);
     }
@@ -123,13 +120,12 @@ class RPCTransaction {
             this.close();
         });
         this._stream.on("end", () => {
-            this._streamIsOpen = false;
             this.close();
         });
         // TODO: look into _stream.on(status) + any other events
     }
 }
-exports.RPCTransaction = RPCTransaction;
+exports.TransactionRPC = TransactionRPC;
 class ResponseCollectors {
     constructor(transaction) {
         this._map = {};
@@ -139,8 +135,8 @@ class ResponseCollectors {
         return this._map[uuid];
     }
     put(uuid, collector) {
-        if (this._transaction["_transactionWasClosed"])
-            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.TRANSACTION_CLOSED.message());
+        if (!this._transaction.isOpen())
+            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.TRANSACTION_CLOSED);
         this._map[uuid] = collector;
     }
     clearWithError(error) {

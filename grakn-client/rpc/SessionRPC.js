@@ -21,39 +21,44 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RPCSession = void 0;
+exports.SessionRPC = void 0;
 const dependencies_internal_1 = require("../dependencies_internal");
 const session_pb_1 = __importDefault(require("grakn-protocol/protobuf/session_pb"));
-class RPCSession {
-    constructor(grpcClient, database, type) {
-        this._database = database;
+class SessionRPC {
+    constructor(client, database, type) {
+        this._database = new dependencies_internal_1.DatabaseRPC(client.grpcClient(), database);
         this._type = type;
-        this._grpcClient = grpcClient;
+        this._client = client;
+        this._grpcClient = client.grpcClient();
     }
-    async open(options = new dependencies_internal_1.GraknOptions()) {
+    async open(options = dependencies_internal_1.GraknOptions.core()) {
         const openReq = new session_pb_1.default.Session.Open.Req()
-            .setDatabase(this._database)
+            .setDatabase(this._database.name())
             .setType(sessionType(this._type))
-            .setOptions(dependencies_internal_1.ProtoBuilder.options(options));
+            .setOptions(dependencies_internal_1.OptionsProtoBuilder.options(options));
+        this._options = options;
         this._isOpen = true;
         const res = await new Promise((resolve, reject) => {
             this._grpcClient.session_open(openReq, (err, res) => {
                 if (err)
-                    reject(err);
+                    reject(new dependencies_internal_1.GraknClientError(err));
                 else
                     resolve(res);
             });
         });
-        this._sessionId = res.getSessionId_asB64();
+        this._id = res.getSessionId_asB64();
         this._pulse = setTimeout(() => this.pulse(), 5000);
         return this;
     }
-    transaction(type, options = new dependencies_internal_1.GraknOptions()) {
-        const transaction = new dependencies_internal_1.RPCTransaction(this._grpcClient, type);
-        return transaction.open(this._sessionId, options);
+    transaction(type, options = dependencies_internal_1.GraknOptions.core()) {
+        const transaction = new dependencies_internal_1.TransactionRPC(this._grpcClient, type);
+        return transaction.open(this._id, options);
     }
     type() {
         return this._type;
+    }
+    options() {
+        return this._options;
     }
     isOpen() {
         return this._isOpen;
@@ -62,13 +67,10 @@ class RPCSession {
         if (this._isOpen) {
             this._isOpen = false;
             clearTimeout(this._pulse);
-            const req = new session_pb_1.default.Session.Close.Req().setSessionId(this._sessionId);
-            await new Promise((resolve, reject) => {
-                this._grpcClient.session_close(req, (err) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve();
+            const req = new session_pb_1.default.Session.Close.Req().setSessionId(this._id);
+            await new Promise(resolve => {
+                this._grpcClient.session_close(req, () => {
+                    resolve();
                 });
             });
         }
@@ -76,10 +78,13 @@ class RPCSession {
     database() {
         return this._database;
     }
+    id() {
+        return this._id;
+    }
     pulse() {
         if (!this._isOpen)
             return;
-        const pulse = new session_pb_1.default.Session.Pulse.Req().setSessionId(this._sessionId);
+        const pulse = new session_pb_1.default.Session.Pulse.Req().setSessionId(this._id);
         this._grpcClient.session_pulse(pulse, (err, res) => {
             if (err || !res.getAlive())
                 this._isOpen = false;
@@ -88,14 +93,14 @@ class RPCSession {
         });
     }
 }
-exports.RPCSession = RPCSession;
+exports.SessionRPC = SessionRPC;
 function sessionType(type) {
     switch (type) {
-        case dependencies_internal_1.Grakn.SessionType.DATA:
+        case dependencies_internal_1.SessionType.DATA:
             return session_pb_1.default.Session.Type.DATA;
-        case dependencies_internal_1.Grakn.SessionType.SCHEMA:
+        case dependencies_internal_1.SessionType.SCHEMA:
             return session_pb_1.default.Session.Type.SCHEMA;
         default:
-            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.UNRECOGNISED_SESSION_TYPE.message());
+            throw new dependencies_internal_1.GraknClientError(dependencies_internal_1.ErrorMessage.Client.UNRECOGNISED_SESSION_TYPE);
     }
 }

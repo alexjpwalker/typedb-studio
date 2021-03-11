@@ -19,10 +19,16 @@ export declare namespace ErrorMessage {
     }
     namespace Client {
         const TRANSACTION_CLOSED: Client;
-        const NONPOSITIVE_BATCH_SIZE: Client;
+        const UNABLE_TO_CONNECT: Client;
+        const NEGATIVE_VALUE_NOT_ALLOWED: Client;
         const MISSING_DB_NAME: Client;
+        const DB_DOES_NOT_EXIST: Client;
         const MISSING_RESPONSE: Client;
         const UNKNOWN_REQUEST_ID: Client;
+        const CLUSTER_NO_PRIMARY_REPLICA_YET: Client;
+        const CLUSTER_UNABLE_TO_CONNECT: Client;
+        const CLUSTER_REPLICA_NOT_PRIMARY: Client;
+        const CLUSTER_ALL_NODES_FAILED: Client;
         const UNRECOGNISED_SESSION_TYPE: Client;
     }
     class Concept extends ErrorMessage {
@@ -45,6 +51,12 @@ export declare namespace ErrorMessage {
         const NO_EXPLANATION: Query;
         const BAD_ANSWER_TYPE: Query;
         const MISSING_ANSWER: Query;
-        const ILLEGAL_CAST: Query;
+    }
+    class Internal extends ErrorMessage {
+        constructor(code: number, message: (args: Stringable[]) => string);
+    }
+    namespace Internal {
+        const ILLEGAL_CAST: Internal;
+        const ILLEGAL_ARGUMENT: Internal;
     }
 }

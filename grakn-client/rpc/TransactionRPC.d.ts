@@ -1,8 +1,8 @@
-import { Grakn, ConceptManager, GraknOptions, QueryManager, Stream, LogicManager } from "../dependencies_internal";
+import { GraknClient, ConceptManager, GraknOptions, QueryManager, Stream, LogicManager, TransactionType } from "../dependencies_internal";
 import TransactionProto from "grakn-protocol/protobuf/transaction_pb";
 import GraknProto from "grakn-protocol/protobuf/grakn_grpc_pb";
 import GraknGrpc = GraknProto.GraknClient;
-export declare class RPCTransaction implements Grakn.Transaction {
+export declare class TransactionRPC implements GraknClient.Transaction {
     private readonly _type;
     private readonly _conceptManager;
     private readonly _logicManager;
@@ -10,13 +10,13 @@ export declare class RPCTransaction implements Grakn.Transaction {
     private readonly _collectors;
     private readonly _grpcClient;
     private _stream;
-    private _streamIsOpen;
-    private _transactionWasOpened;
-    private _transactionWasClosed;
+    private _options;
+    private _isOpen;
     private _networkLatencyMillis;
-    constructor(grpcClient: GraknGrpc, type: Grakn.TransactionType);
-    open(sessionId: string, options?: GraknOptions): Promise<RPCTransaction>;
-    type(): Grakn.TransactionType;
+    constructor(grpcClient: GraknGrpc, type: TransactionType);
+    open(sessionId: string, options?: GraknOptions): Promise<TransactionRPC>;
+    type(): TransactionType;
+    options(): GraknOptions;
     isOpen(): boolean;
     concepts(): ConceptManager;
     logic(): LogicManager;

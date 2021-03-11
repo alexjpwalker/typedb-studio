@@ -1,5 +1,5 @@
-import { TypeImpl, RemoteTypeImpl, ThingType, RemoteThingType, AttributeType, RoleType, Grakn, Stream, ThingImpl, RoleTypeImpl, AttributeTypeImpl } from "../../../dependencies_internal";
-import Transaction = Grakn.Transaction;
+import { TypeImpl, RemoteTypeImpl, ThingType, RemoteThingType, AttributeType, RoleType, GraknClient, Stream, ThingImpl, RoleTypeImpl, AttributeTypeImpl } from "../../../dependencies_internal";
+import Transaction = GraknClient.Transaction;
 import ConceptProto from "grakn-protocol/protobuf/concept_pb";
 export declare class ThingTypeImpl extends TypeImpl implements ThingType {
     constructor(label: string, isRoot: boolean);

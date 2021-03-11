@@ -17,22 +17,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RemoteEntityImpl = exports.EntityImpl = void 0;
 const dependencies_internal_1 = require("../../../dependencies_internal");
-const concept_pb_1 = __importDefault(require("grakn-protocol/protobuf/concept_pb"));
 class EntityImpl extends dependencies_internal_1.ThingImpl {
-    constructor(iid) {
+    constructor(iid, type) {
         super(iid);
+        this._type = type;
     }
     static of(protoThing) {
-        return new EntityImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()));
+        return new EntityImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()), dependencies_internal_1.EntityTypeImpl.of(protoThing.getType()));
+    }
+    getType() {
+        return this._type;
     }
     asRemote(transaction) {
-        return new RemoteEntityImpl(transaction, this.getIID());
+        return new RemoteEntityImpl(transaction, this.getIID(), this._type);
     }
     isEntity() {
         return true;
@@ -40,15 +40,15 @@ class EntityImpl extends dependencies_internal_1.ThingImpl {
 }
 exports.EntityImpl = EntityImpl;
 class RemoteEntityImpl extends dependencies_internal_1.RemoteThingImpl {
-    constructor(transaction, iid) {
+    constructor(transaction, iid, type) {
         super(transaction, iid);
+        this._type = type;
     }
     asRemote(transaction) {
-        return new RemoteEntityImpl(transaction, this.getIID());
+        return new RemoteEntityImpl(transaction, this.getIID(), this._type);
     }
-    async getType() {
-        const res = await this.execute(new concept_pb_1.default.Thing.Req().setThingGetTypeReq(new concept_pb_1.default.Thing.GetType.Req()));
-        return dependencies_internal_1.ThingTypeImpl.of(res.getThingGetTypeRes().getThingType());
+    getType() {
+        return this._type;
     }
     isEntity() {
         return true;

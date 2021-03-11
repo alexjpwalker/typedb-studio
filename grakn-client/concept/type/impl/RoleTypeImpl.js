@@ -24,7 +24,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RemoteRoleTypeImpl = exports.RoleTypeImpl = void 0;
 const dependencies_internal_1 = require("../../../dependencies_internal");
 const concept_pb_1 = __importDefault(require("grakn-protocol/protobuf/concept_pb"));
-class RoleTypeImpl extends dependencies_internal_1.ThingTypeImpl {
+class RoleTypeImpl extends dependencies_internal_1.TypeImpl {
     constructor(label, scope, isRoot) {
         super(label, isRoot);
         this._scope = scope;
@@ -49,7 +49,7 @@ class RoleTypeImpl extends dependencies_internal_1.ThingTypeImpl {
     }
 }
 exports.RoleTypeImpl = RoleTypeImpl;
-class RemoteRoleTypeImpl extends dependencies_internal_1.RemoteThingTypeImpl {
+class RemoteRoleTypeImpl extends dependencies_internal_1.RemoteTypeImpl {
     constructor(transaction, label, scope, isRoot) {
         super(transaction, label, isRoot);
         this._scope = scope;

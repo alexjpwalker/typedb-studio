@@ -26,14 +26,18 @@ const dependencies_internal_1 = require("../../../dependencies_internal");
 const concept_pb_1 = __importDefault(require("grakn-protocol/protobuf/concept_pb"));
 const transaction_pb_1 = __importDefault(require("grakn-protocol/protobuf/transaction_pb"));
 class RelationImpl extends dependencies_internal_1.ThingImpl {
-    constructor(iid) {
+    constructor(iid, type) {
         super(iid);
+        this._type = type;
     }
     static of(protoThing) {
-        return new RelationImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()));
+        return new RelationImpl(dependencies_internal_1.Bytes.bytesToHexString(protoThing.getIid_asU8()), dependencies_internal_1.RelationTypeImpl.of(protoThing.getType()));
     }
     asRemote(transaction) {
-        return new RemoteRelationImpl(transaction, this.getIID());
+        return new RemoteRelationImpl(transaction, this.getIID(), this._type);
+    }
+    getType() {
+        return this._type;
     }
     isRelation() {
         return true;
@@ -41,15 +45,15 @@ class RelationImpl extends dependencies_internal_1.ThingImpl {
 }
 exports.RelationImpl = RelationImpl;
 class RemoteRelationImpl extends dependencies_internal_1.RemoteThingImpl {
-    constructor(transaction, iid) {
+    constructor(transaction, iid, type) {
         super(transaction, iid);
+        this._type = type;
     }
     asRemote(transaction) {
-        return new RemoteRelationImpl(transaction, this.getIID());
+        return new RemoteRelationImpl(transaction, this.getIID(), this._type);
     }
-    async getType() {
-        const res = await this.execute(new concept_pb_1.default.Thing.Req().setThingGetTypeReq(new concept_pb_1.default.Thing.GetType.Req()));
-        return dependencies_internal_1.ThingTypeImpl.of(res.getThingGetTypeRes().getThingType());
+    getType() {
+        return this._type;
     }
     async getPlayersByRoleType() {
         const method = new concept_pb_1.default.Thing.Req()
