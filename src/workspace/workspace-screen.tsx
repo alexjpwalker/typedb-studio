@@ -71,29 +71,47 @@ interface GraphElementIDRegistry {
     things: {[label: string]: number};
 }
 
+const tabs: StudioTabItem[] = [{ label: "Query1.tql", key: "0" }];
+const resultsTabs: StudioTabItem[] = [
+    { label: "Log", key: "0" },
+    { label: "Graph", key: "1" },
+    { label: "Table", key: "2" },
+];
+
+const leftSidebar: StudioTabItem[] = [
+    { label: "Permissions", key: "Permissions", icon: <FontAwesomeIcon icon={faUserShield} style={{marginLeft: 3}}/> },
+    { label: "Schema Explorer", key: "Schema Explorer", icon: <FontAwesomeIcon icon={faShapes}/> },
+];
+
+const rightSidebar: StudioTabItem[] = [
+    { label: "Settings", key: "Settings", icon: <FontAwesomeIcon icon={faCog} style={{marginRight: 3}}/> },
+    { label: "Graph Explorer", key: "Graph Explorer", icon: <FontAwesomeIcon icon={faProjectDiagram}/> },
+];
+
 export const WorkspaceScreen: React.FC = () => {
+    console.log("Running WorkspaceScreen()");
     const theme = themeState.use()[0];
     const classes = Object.assign({}, studioStyles({ theme }), workspaceStyles({ theme }));
 
     const [db, setDB] = databaseState.use();
     const [dbServer, setDBServer] = dbServerState.use();
     const [code, setCode] = React.useState("match $x sub thing;\noffset 0;\nlimit 1000;\n");
-    const [answerGraph, setAnswerGraph] = React.useState<TypeDBVisualiserData.Graph>(null);
+    // const [answerGraph, setAnswerGraph] = React.useState<TypeDBVisualiserData.Graph>(null);
     const [visualiserData, setVisualiserData] = React.useState<TypeDBVisualiserData.Graph>(null);
     const [rawAnswers, setRawAnswers] = React.useState<ConceptMapData[]>(null);
-    const [answerTable, setAnswerTable] = React.useState<AnswerTable>(null);
+    // const [answerTable, setAnswerTable] = React.useState<AnswerTable>(null);
     const { setSnackbar } = React.useContext(SnackbarContext);
-    const [principalStatus, setPrincipalStatus] = React.useState("Ready");
-    const [zoom, setZoom] = React.useState("100");
-    const [queryResult, setQueryResult] = React.useState<string>(null);
+    // const [principalStatus, setPrincipalStatus] = React.useState("Ready");
+    // const [zoom, setZoom] = React.useState("100");
+    // const [queryResult, setQueryResult] = React.useState<string>(null);
     const [queryRunning, setQueryRunning] = React.useState(false);
-    const [queryRunTime, setQueryRunTime] = React.useState<string>(null);
-    const [renderRunTime, setRenderRunTime] = React.useState<string>(null);
-    const [queryStartTime, setQueryStartTime] = React.useState<number>(null);
-    const [queryEndTime, setQueryEndTime] = React.useState<number>(null);
-    const [timeQuery, setTimeQuery] = React.useState(false);
-    const [queryCancelled, setQueryCancelled] = React.useState(false);
-    const [selectedVertex, setSelectedVertex] = React.useState<ForceGraphVertex>(null);
+    // const [queryRunTime, setQueryRunTime] = React.useState<string>(null);
+    // const [renderRunTime, setRenderRunTime] = React.useState<string>(null);
+    // const [queryStartTime, setQueryStartTime] = React.useState<number>(null);
+    // const [queryEndTime, setQueryEndTime] = React.useState<number>(null);
+    // const [timeQuery, setTimeQuery] = React.useState(false);
+    // const [queryCancelled, setQueryCancelled] = React.useState(false);
+    // const [selectedVertex, setSelectedVertex] = React.useState<ForceGraphVertex>(null);
     const [graphElementIDs, setGraphElementIDs] = React.useState<GraphElementIDRegistry>(null);
     const routerHistory = useHistory();
 
@@ -103,114 +121,98 @@ export const WorkspaceScreen: React.FC = () => {
         // setZoom(`${(scale * 100).toPrecision(3)}`);
     }
 
-    const tabs: StudioTabItem[] = [{ label: "Query1.tql", key: "0" }];
-    const resultsTabs: StudioTabItem[] = [
-        { label: "Log", key: "0" },
-        { label: "Graph", key: "1" },
-        { label: "Table", key: "2" },
-    ];
-
-    const leftSidebar: StudioTabItem[] = [
-        { label: "Permissions", key: "Permissions", icon: <FontAwesomeIcon icon={faUserShield} style={{marginLeft: 3}}/> },
-        { label: "Schema Explorer", key: "Schema Explorer", icon: <FontAwesomeIcon icon={faShapes}/> },
-    ];
-
-    const rightSidebar: StudioTabItem[] = [
-        { label: "Settings", key: "Settings", icon: <FontAwesomeIcon icon={faCog} style={{marginRight: 3}}/> },
-        { label: "Graph Explorer", key: "Graph Explorer", icon: <FontAwesomeIcon icon={faProjectDiagram}/> },
-    ];
-
     const runQuery = () => {
         const req: MatchQueryRequest = { db, query: code };
         ipcRenderer.send("match-query-request", req);
-        setPrincipalStatus("Running Match query...");
+        // setPrincipalStatus("Running Match query...");
         setQueryRunning(true);
-        setQueryStartTime(Date.now());
-        setQueryRunTime("00:00.000");
+        // setQueryStartTime(Date.now());
+        // setQueryRunTime("00:00.000");
         // setRenderRunTime(null);
-        setQueryCancelled(false);
-        setAnswerGraph({ simulationID: null, vertices: [], edges: [] });
+        // setQueryCancelled(false);
+        // setAnswerGraph({ simulationID: null, vertices: [], edges: [] });
         setVisualiserData({ simulationID: null, vertices: [], edges: [] });
         setGraphElementIDs({ nextID: 1, things: {}, types: {} });
         setRawAnswers([]);
-        setAnswerTable(null);
-        addLogEntry(code);
+        // setAnswerTable(null);
+        // addLogEntry(code);
     };
 
-    const cancelQuery = () => {
-        if (!queryRunning) return; // resolves race condition between resolving onClick and processing query response
-        ipcRenderer.send("cancel-query-request");
-        setPrincipalStatus("Ready");
-        setQueryRunning(false);
-        setQueryEndTime(Date.now());
-        setTimeQuery(true);
-        setQueryCancelled(true);
-        const answerCountString = `${rawAnswers.length} answer${rawAnswers.length !== 1 ? "s" : ""}`;
-        setQueryResult(`${answerCountString} (interrupted)`);
-        addLogEntry("Query cancelled by user");
-    };
+    // const cancelQuery = () => {
+    //     if (!queryRunning) return; // resolves race condition between resolving onClick and processing query response
+    //     ipcRenderer.send("cancel-query-request");
+    //     setPrincipalStatus("Ready");
+    //     setQueryRunning(false);
+    //     setQueryEndTime(Date.now());
+    //     setTimeQuery(true);
+    //     setQueryCancelled(true);
+    //     const answerCountString = `${rawAnswers.length} answer${rawAnswers.length !== 1 ? "s" : ""}`;
+    //     setQueryResult(`${answerCountString} (interrupted)`);
+    //     addLogEntry("Query cancelled by user");
+    // };
 
     const runOrCancelQuery = () => {
-        if (!queryRunning) runQuery();
-        else cancelQuery();
+        runQuery();
+        // if (!queryRunning) runQuery();
+        // else cancelQuery();
     };
 
     const signOut = () => {
         routerHistory.push(routes.login);
     };
 
-    useInterval(() => {
-        if (queryRunning) setQueryRunTime(msToTime(Date.now() - queryStartTime));
-        else if (timeQuery) {
-            setQueryRunTime(msToTime(queryEndTime - queryStartTime));
-            setTimeQuery(false);
-        }
-    }, 40);
+    // useInterval(() => {
+    //     if (queryRunning) setQueryRunTime(msToTime(Date.now() - queryStartTime));
+    //     else if (timeQuery) {
+    //         setQueryRunTime(msToTime(queryEndTime - queryStartTime));
+    //         setTimeQuery(false);
+    //     }
+    // }, 40);
 
     const aceEditorRef = React.useRef<AceEditor>(null);
-    const [selectedIndex, setSelectedIndex] = React.useState(0);
-    const [selectedResultsTab, setSelectedResultsTab] = React.useState(ResultsTab.GRAPH);
+    // const [selectedIndex, setSelectedIndex] = React.useState(0);
+    // const [selectedResultsTab, setSelectedResultsTab] = React.useState(ResultsTab.GRAPH);
 
-    const switchResultsTab = (tab: ResultsTab) => {
-        setSelectedResultsTab(tab);
-        if (tab === ResultsTab.GRAPH) {
-            setVisualiserData(answerGraph);
-        }
-    }
+    // const switchResultsTab = (tab: ResultsTab) => {
+    //     setSelectedResultsTab(tab);
+    //     if (tab === ResultsTab.GRAPH) {
+    //         setVisualiserData(answerGraph);
+    //     }
+    // }
 
     React.useEffect(() => {
         const customMode = new AceTypeQL();
         aceEditorRef.current.editor.getSession().setMode(customMode as any);
     }, []);
 
-    const formatLogDate = (date: Date) => moment(date).format("DD-MM-YY HH:mm:ss.SSS");
-    const [resultsLog, setResultsLog] = React.useState(`${formatLogDate(new Date())} - Connected to database '${databaseState.use()[0]}'`);
-    const addLogEntry = (entry: string) => {
-        const lines = entry.split("\n");
-        const formattedLines = [lines[0]].concat(lines.slice(1).map(line => " ".repeat(24) + line));
-        setResultsLog(resultsLog + `\n\n${formatLogDate(new Date())} - ${formattedLines.join("\n").trim()}`);
-    }
+    // const formatLogDate = (date: Date) => moment(date).format("DD-MM-YY HH:mm:ss.SSS");
+    // const [resultsLog, setResultsLog] = React.useState(`${formatLogDate(new Date())} - Connected to database '${databaseState.use()[0]}'`);
+    // const addLogEntry = (entry: string) => {
+    //     const lines = entry.split("\n");
+    //     const formattedLines = [lines[0]].concat(lines.slice(1).map(line => " ".repeat(24) + line));
+    //     setResultsLog(resultsLog + `\n\n${formatLogDate(new Date())} - ${formattedLines.join("\n").trim()}`);
+    // }
 
     React.useEffect(() => {
         const onReceiveMatchQueryResponsePart = (_event: IpcRendererEvent, res: MatchQueryResponsePart) => {
             // TODO: Concurrent responses may produce odd behaviour - can we correlate the event in the response
             //  to the one we sent in the request somehow?
-            if (queryCancelled) return;
+            // if (queryCancelled) return;
 
             if (res.done) {
-                setPrincipalStatus("Ready");
+                // setPrincipalStatus("Ready");
                 setQueryRunning(false);
-                setTimeQuery(true);
-                setQueryEndTime(Date.now());
+                // setTimeQuery(true);
+                // setQueryEndTime(Date.now());
             }
 
             // setRenderRunTime("<<in progress>>");
             if (res.success) {
                 rawAnswers.push(...res.answers);
                 setRawAnswers(rawAnswers);
-                const answerCountString = `${rawAnswers.length} answer${rawAnswers.length !== 1 ? "s" : ""}`;
-                setQueryResult(answerCountString);
-                if (res.done) addLogEntry(answerCountString);
+                // const answerCountString = `${rawAnswers.length} answer${rawAnswers.length !== 1 ? "s" : ""}`;
+                // setQueryResult(answerCountString);
+                // if (res.done) addLogEntry(answerCountString);
                 const simulationID = visualiserData?.simulationID || uuidv4();
                 const vertices: TypeDBVisualiserData.Vertex[] = visualiserData?.vertices || [];
                 const edges: TypeDBVisualiserData.Edge[] = visualiserData?.edges || [];
@@ -305,7 +307,7 @@ export const WorkspaceScreen: React.FC = () => {
                 setGraphElementIDs(graphElementIDs);
                 // TODO: AnswerGraph and VisualiserData are not intuitive - they're usually the same unless the
                 //  graph tab is inactive
-                setAnswerGraph({ simulationID, vertices, edges });
+                // setAnswerGraph({ simulationID, vertices, edges });
                 // TODO: We should also skip the Concept API calls on the backend if the Graph tab is inactive
                 // TODO: PoC - delete when redundant
                 // if (selectedResultsTab === ResultsTab.GRAPH) {
@@ -319,33 +321,34 @@ export const WorkspaceScreen: React.FC = () => {
                 // } else {
                 //     setVisualiserData({ simulationID, vertices: [], edges: [] });
                 // }
-                if (selectedResultsTab === ResultsTab.GRAPH) {
-                    setVisualiserData({simulationID, vertices, edges});
-                } else {
-                    setVisualiserData({simulationID: null, vertices: [], edges: []});
-                }
+                // if (selectedResultsTab === ResultsTab.GRAPH) {
+                //     setVisualiserData({simulationID, vertices, edges});
+                // } else {
+                //     setVisualiserData({simulationID: null, vertices: [], edges: []});
+                // }
+                setVisualiserData({simulationID, vertices, edges});
 
                 // TODO: There must be a more efficient way of doing this
-                if (rawAnswers) {
-                    const headings = Object.keys(rawAnswers[0]);
-                    const rows = rawAnswers.map(answer => {
-                        const concepts = Object.values(answer);
-                        return concepts.map(concept => {
-                            // TODO: duplicated code
-                            return concept.value != null
-                                ? `${concept.type}:${concept.value instanceof Date ? moment(concept.value).format("DD-MM-YY HH:mm:ss") : concept.value.toString().slice(0, 100)}`
-                                : (concept.label || concept.type);
-                        });
-                    });
-                    // TODO: this setting of initialGridTemplateColumns is suspect
-                    setAnswerTable({ headings, rows, initialGridTemplateColumns: `40px ${"200px ".repeat(headings.length)}`.trim() });
-                } else {
-                    setAnswerTable(null); // We don't know what the column headings are if there are no answers
-                }
+                // if (rawAnswers) {
+                //     const headings = Object.keys(rawAnswers[0]);
+                //     const rows = rawAnswers.map(answer => {
+                //         const concepts = Object.values(answer);
+                //         return concepts.map(concept => {
+                //             // TODO: duplicated code
+                //             return concept.value != null
+                //                 ? `${concept.type}:${concept.value instanceof Date ? moment(concept.value).format("DD-MM-YY HH:mm:ss") : concept.value.toString().slice(0, 100)}`
+                //                 : (concept.label || concept.type);
+                //         });
+                //     });
+                //     // TODO: this setting of initialGridTemplateColumns is suspect
+                //     setAnswerTable({ headings, rows, initialGridTemplateColumns: `40px ${"200px ".repeat(headings.length)}`.trim() });
+                // } else {
+                //     setAnswerTable(null); // We don't know what the column headings are if there are no answers
+                // }
             } else {
-                setQueryResult("Error executing query");
+                // setQueryResult("Error executing query");
                 setSnackbar({ open: true, variant: "error", message: res.error });
-                addLogEntry(res.error);
+                // addLogEntry(res.error);
             }
         };
 
@@ -353,7 +356,7 @@ export const WorkspaceScreen: React.FC = () => {
         return () => {
             ipcRenderer.removeListener("match-query-response-part", onReceiveMatchQueryResponsePart);
         };
-    }, [resultsLog, selectedResultsTab, queryCancelled, rawAnswers, graphElementIDs, visualiserData]);
+    }, [rawAnswers, graphElementIDs, visualiserData]);
 
     const onRenderDone = () => {
         // setRenderRunTime(msToTime(Date.now() - queryEndTime));
@@ -366,36 +369,36 @@ export const WorkspaceScreen: React.FC = () => {
         return [queryPaneInitialWidth, graphExplorerInitialWidth];
     }
 
-    const loadConnectedAttributes = () => {
-        const { vertices, edges } = visualiserData;
-
-        for (const conceptMap of rawAnswers) {
-            for (const varName in conceptMap) {
-                if (!conceptMap.hasOwnProperty(varName)) continue;
-                const concept = conceptMap[varName] as GraphNode;
-                if (concept.label !== selectedVertex.label) continue;
-                for (const attributeTypeLabel of concept.ownsLabels) {
-                    // TODO: don't add if already in graph
-                    vertices.push({
-                        id: graphElementIDs.nextID,
-                        width: 110,
-                        height: 40,
-                        label: attributeTypeLabel,
-                        encoding: "attributeType",
-                    });
-                    graphElementIDs.types[attributeTypeLabel] = graphElementIDs.nextID;
-                    graphElementIDs.nextID++;
-                    edges.push({ id: graphElementIDs.nextID, source: concept.nodeID, target: graphElementIDs.nextID, label: "owns" });
-                    graphElementIDs.nextID++;
-                }
-                // TODO: answerGraph and visualiserData are usually identical unless the graph tab is not selected,
-                //  but this isn't intuitive at all
-                setAnswerGraph({ simulationID: visualiserData.simulationID, vertices, edges });
-                setVisualiserData({ simulationID: visualiserData.simulationID, vertices, edges });
-                setGraphElementIDs(graphElementIDs);
-            }
-        }
-    }
+    // const loadConnectedAttributes = () => {
+    //     const { vertices, edges } = visualiserData;
+    //
+    //     for (const conceptMap of rawAnswers) {
+    //         for (const varName in conceptMap) {
+    //             if (!conceptMap.hasOwnProperty(varName)) continue;
+    //             const concept = conceptMap[varName] as GraphNode;
+    //             if (concept.label !== selectedVertex.label) continue;
+    //             for (const attributeTypeLabel of concept.ownsLabels) {
+    //                 // TODO: don't add if already in graph
+    //                 vertices.push({
+    //                     id: graphElementIDs.nextID,
+    //                     width: 110,
+    //                     height: 40,
+    //                     label: attributeTypeLabel,
+    //                     encoding: "attributeType",
+    //                 });
+    //                 graphElementIDs.types[attributeTypeLabel] = graphElementIDs.nextID;
+    //                 graphElementIDs.nextID++;
+    //                 edges.push({ id: graphElementIDs.nextID, source: concept.nodeID, target: graphElementIDs.nextID, label: "owns" });
+    //                 graphElementIDs.nextID++;
+    //             }
+    //             // TODO: answerGraph and visualiserData are usually identical unless the graph tab is not selected,
+    //             //  but this isn't intuitive at all
+    //             setAnswerGraph({ simulationID: visualiserData.simulationID, vertices, edges });
+    //             setVisualiserData({ simulationID: visualiserData.simulationID, vertices, edges });
+    //             setGraphElementIDs(graphElementIDs);
+    //         }
+    //     }
+    // }
 
     return (
         <>
@@ -427,37 +430,37 @@ export const WorkspaceScreen: React.FC = () => {
                         <div className={classes.querySplitPane}>
                             <SplitPane split="horizontal" initialSizes={[1, 3]}>
                                 <div className={classes.editorPane}>
-                                    <StudioTabs selectedIndex={selectedIndex} setSelectedIndex={setSelectedIndex} items={tabs}
+                                    <StudioTabs selectedIndex={0} setSelectedIndex={() => null} items={tabs}
                                                 classes={{ root: classes.editorTabs, tabGroup: classes.editorTabGroup, tab: classes.editorTab }}
                                                 showCloseButton showAddButton>
-                                        <StudioTabPanel index={0} selectedIndex={selectedIndex} className={classes.editorTabPanel}>
+                                        <StudioTabPanel index={0} selectedIndex={0} className={classes.editorTabPanel}>
                                             <AceEditor ref={aceEditorRef} mode="text" theme="studio-dark" fontSize={"1rem"} value={code}
                                                        onChange={newValue => setCode(newValue)} width="100%" height="100%"/>
                                         </StudioTabPanel>
                                     </StudioTabs>
                                 </div>
                                 <div className={classes.resultsPane}>
-                                    <StudioTabs selectedIndex={selectedResultsTab} setSelectedIndex={switchResultsTab}
+                                    <StudioTabs selectedIndex={ResultsTab.GRAPH} setSelectedIndex={() => null}
                                                 items={resultsTabs} classes={{root: classes.resultsTabs, tabGroup: classes.resultsTabGroup, tab: classes.resultsTab}}>
-                                        <StudioTabPanel index={0} selectedIndex={selectedResultsTab} className={classes.resultsTabPanel}>
-                                            <pre className={classes.resultsLog}><div>{resultsLog}</div></pre>
+                                        <StudioTabPanel index={0} selectedIndex={ResultsTab.GRAPH} className={classes.resultsTabPanel}>
+                                            <pre className={classes.resultsLog}><div></div></pre>
                                         </StudioTabPanel>
-                                        <StudioTabPanel index={1} selectedIndex={selectedResultsTab} className={classes.resultsTabPanel}>
+                                        <StudioTabPanel index={1} selectedIndex={ResultsTab.GRAPH} className={classes.resultsTabPanel}>
                                             <TypeDBVisualiser data={visualiserData} className={classes.visualiser}
-                                                              theme={themeState.use()[0].visualiser} onVertexClick={setSelectedVertex}
+                                                              theme={themeState.use()[0].visualiser} onVertexClick={() => null}
                                                               onZoom={updateZoom} onFirstTick={onRenderDone}/>
                                         </StudioTabPanel>
-                                        <StudioTabPanel index={2} selectedIndex={selectedResultsTab} className={clsx(classes.resultsTabPanel, classes.resultsTablePanel)}>
-                                            {answerTable &&
-                                            <StudioTable headings={[""].concat(answerTable.headings)} minCellWidth={40} sizing="resizable"
-                                                         initialGridTemplateColumns={answerTable.initialGridTemplateColumns} className={classes.resultsTable}>
-                                                {answerTable.rows.map((row, idx) => (
-                                                    <tr>
-                                                        <th>{idx + 1}</th>
-                                                        {row.map(cell => <td><span>{cell}</span></td>)}
-                                                    </tr>
-                                                ))}
-                                            </StudioTable>}
+                                        <StudioTabPanel index={2} selectedIndex={ResultsTab.GRAPH} className={clsx(classes.resultsTabPanel, classes.resultsTablePanel)}>
+                                            {/*{answerTable &&*/}
+                                            {/*<StudioTable headings={[""].concat(answerTable.headings)} minCellWidth={40} sizing="resizable"*/}
+                                            {/*             initialGridTemplateColumns={answerTable.initialGridTemplateColumns} className={classes.resultsTable}>*/}
+                                            {/*    {answerTable.rows.map((row, idx) => (*/}
+                                            {/*        <tr>*/}
+                                            {/*            <th>{idx + 1}</th>*/}
+                                            {/*            {row.map(cell => <td><span>{cell}</span></td>)}*/}
+                                            {/*        </tr>*/}
+                                            {/*    ))}*/}
+                                            {/*</StudioTable>}*/}
                                         </StudioTabPanel>
                                     </StudioTabs>
                                 </div>
@@ -477,24 +480,24 @@ export const WorkspaceScreen: React.FC = () => {
                                     <div className={classes.sidebarWindowHeader}>
                                         Graph Explorer
                                     </div>
-                                    <div className={classes.graphExplorerBody}>
-                                        {!selectedVertex && <p style={{padding: 8}}>Select a vertex from the graph to inspect it.</p>}
-                                        {selectedVertex &&
-                                        <>
-                                            <StudioTable headings={["Property", "Value"]} minCellWidth={50} sizing="fixed"
-                                                         initialGridTemplateColumns="minmax(80px, 1fr) minmax(80px, 2fr)" className={classes.graphExplorerTable}>
-                                                <tr>
-                                                    <td><span>Label</span></td>
-                                                    <td><span>{selectedVertex.label}</span></td>
-                                                </tr>
-                                                <tr>
-                                                    <td><span>Encoding</span></td>
-                                                    <td><span>{selectedVertex.encoding}</span></td>
-                                                </tr>
-                                            </StudioTable>
-                                            <StudioButton size="smaller" type="primary" onClick={loadConnectedAttributes}>Load attribute ownerships</StudioButton>
-                                        </>}
-                                    </div>
+                                    {/*<div className={classes.graphExplorerBody}>*/}
+                                    {/*    {!selectedVertex && <p style={{padding: 8}}>Select a vertex from the graph to inspect it.</p>}*/}
+                                    {/*    {selectedVertex &&*/}
+                                    {/*    <>*/}
+                                    {/*        <StudioTable headings={["Property", "Value"]} minCellWidth={50} sizing="fixed"*/}
+                                    {/*                     initialGridTemplateColumns="minmax(80px, 1fr) minmax(80px, 2fr)" className={classes.graphExplorerTable}>*/}
+                                    {/*            <tr>*/}
+                                    {/*                <td><span>Label</span></td>*/}
+                                    {/*                <td><span>{selectedVertex.label}</span></td>*/}
+                                    {/*            </tr>*/}
+                                    {/*            <tr>*/}
+                                    {/*                <td><span>Encoding</span></td>*/}
+                                    {/*                <td><span>{selectedVertex.encoding}</span></td>*/}
+                                    {/*            </tr>*/}
+                                    {/*        </StudioTable>*/}
+                                    {/*        <StudioButton size="smaller" type="primary" onClick={loadConnectedAttributes}>Load attribute ownerships</StudioButton>*/}
+                                    {/*    </>}*/}
+                                    {/*</div>*/}
                                 </div>
                             </SplitPane>
                         </div>
@@ -505,17 +508,17 @@ export const WorkspaceScreen: React.FC = () => {
                 </div>
             </div>
             <div className={classes.statusBar}>
-                {principalStatus}
+                {/*{principalStatus}*/}
                 <div className={classes.filler}/>
                 {/*{selectedResultsTab === ResultsTab.GRAPH &&*/}
                 {/*<span>*/}
                 {/*    Zoom: {zoom}%*/}
                 {/*</span>}*/}
-                {queryRunTime &&
-                <div className={classes.resultsStatus}>
-                    {queryResult != null ? <>{queryResult} | Query {queryRunTime}</> : <>Query {queryRunTime}</>}
-                    {/*{renderRunTime && <> | Render {renderRunTime}</>}*/}
-                </div>}
+                {/*{queryRunTime &&*/}
+                {/*<div className={classes.resultsStatus}>*/}
+                {/*    {queryResult != null ? <>{queryResult} | Query {queryRunTime}</> : <>Query {queryRunTime}</>}*/}
+                {/*    /!*{renderRunTime && <> | Render {renderRunTime}</>}*!/*/}
+                {/*</div>}*/}
             </div>
         </>
     );
