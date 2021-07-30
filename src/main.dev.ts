@@ -195,10 +195,10 @@ ipcMain.on("match-query-request", (async (event, req: MatchQueryRequest) => {
             const res: MatchQueryResponsePart = { success: true, answers: answerBucket, done: false };
             event.sender.send("match-query-response-part", res);
             answerBucket.length = 0;
-        }, 500);
+        }, 100);
 
         for await (const cm of answerStream) {
-            await new Promise((resolve) => setTimeout(resolve, 10));
+            await new Promise((resolve) => setTimeout(resolve, 5));
             const answerData: Partial<ConceptMapData> = {};
             const connectedConceptPromises: Promise<void>[] = [];
             for (const [varName, concept] of cm.map.entries()) {
