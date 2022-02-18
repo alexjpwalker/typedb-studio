@@ -38,7 +38,7 @@ import java.nio.file.Path
 object Icon {
 
     private val ICON_DEFAULT_SIZE: TextUnit = 12.sp
-    private val FONT_FILE = Path.of("resources/icons/fontawesome/font-awesome-solid-900.ttf").toFile()
+    private val FONT_FILE = "resources/icons/fontawesome/font-awesome-solid-900.ttf"
     private val FONT_AWESOME = FontFamily(Font(FONT_FILE))
 
     data class Offset(val x: Dp, val y: Dp)
@@ -111,7 +111,7 @@ object Icon {
             text = icon.unicode,
             color = fadeable(color, !enabled),
             fontSize = size,
-            //fontFamily = FONT_AWESOME,
+            fontFamily = FONT_AWESOME,
             modifier = modifier.offset(icon.offset.x, icon.offset.y).rotate(icon.rotate)
         )
     }
