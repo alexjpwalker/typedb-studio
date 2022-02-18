@@ -111,7 +111,7 @@ object Icon {
             text = icon.unicode,
             color = fadeable(color, !enabled),
             fontSize = size,
-            fontFamily = FONT_AWESOME,
+            //fontFamily = FONT_AWESOME,
             modifier = modifier.offset(icon.offset.x, icon.offset.y).rotate(icon.rotate)
         )
     }

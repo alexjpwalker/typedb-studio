@@ -76,8 +76,8 @@ object Typography {
 
     object Themes {
         val DEFAULT = Theme(
-            variableWidthFontFamily = TITILLIUM_WEB_FAMILY,
-            fixedWidthFontFamily = UBUNTU_MONO_FAMILY,
+            variableWidthFontFamily = FontFamily.Default,
+            fixedWidthFontFamily = FontFamily.Monospace,
             bodySizeMedium = DEFAULT_BODY_FONT_SIZE_MEDIUM,
             bodySizeSmall = DEFAULT_BODY_FONT_SIZE_SMALL,
             codeSizeMedium = DEFAULT_CODE_FONT_SIZE_MEDIUM,

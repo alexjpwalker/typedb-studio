@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (C) 2021 Vaticle
  *
  * This program is free software: you can redistribute it and/or modify
@@ -54,6 +54,8 @@ import com.vaticle.typedb.studio.view.page.PageArea
 import javax.swing.UIManager
 import kotlin.system.exitProcess
 import mu.KotlinLogging
+import java.nio.file.Files
+import java.nio.file.Path
 
 object Studio {
 
@@ -67,6 +69,8 @@ object Studio {
     @JvmStatic
     fun main(args: Array<String>) {
         try {
+            println(Path.of(".").toFile().listFiles().map { it.path })
+            println(Files.readString(Path.of("./MANIFEST")))
             setConfigurations()
             Message.loadClasses()
             UserDataDirectory.initialise()
