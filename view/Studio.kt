@@ -22,13 +22,11 @@ package com.vaticle.typedb.studio.view
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.platform.Font
+import java.nio.file.Path
 
 object Studio {
   @JvmStatic
@@ -38,18 +36,13 @@ object Studio {
   @Composable
   fun MainWindow() {
     Window(onCloseRequest = {}) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            androidx.compose.material.Text(text = "Hello World")
-        }
+      androidx.compose.material.Text(text = "Hello World", fontFamily = FontFamily(Font(Path.of("resources/fonts/monaco/Monaco.ttf").toFile(), FontWeight.Normal, FontStyle.Normal)))
     }
   }
 }
 
-
-/* import androidx.compose.foundation.background
+/*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -97,17 +90,17 @@ object Studio {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        try {
+        //try {
             setConfigurations()
             Message.loadClasses()
             UserDataDirectory.initialise()
             application { MainWindow(it) }
-        } catch (exception: Exception) {
+        /*} catch (exception: Exception) {
             application { ErrorWindow(exception, it) }
         } finally {
             LOGGER.debug { Label.CLOSING_TYPEDB_STUDIO }
             exitProcess(0)
-        }
+        }*/
     }
 
     private fun setConfigurations() {
@@ -138,7 +131,7 @@ object Studio {
             onCloseRequest = { onClose() },
             state = rememberWindowState(WindowPlacement.Maximized)
         ) {
-            Column(modifier = Modifier.fillMaxSize().background(Theme.colors.background)) {
+            //Column(modifier = Modifier.fillMaxSize().background(Theme.colors.background)) {
                 Toolbar.Layout()
                 /*Separator.Horizontal()
                 Frame.Row(
@@ -157,14 +150,14 @@ object Studio {
                 )
                 Separator.Horizontal()
                 StatusBar.Layout()*/
-            }
-            NotificationArea.Layout()
+            //}
+            /*NotificationArea.Layout()
             if (GlobalState.confirmation.dialog.isOpen) ConfirmationDialog.Layout()
             if (GlobalState.connection.connectServerDialog.isOpen) ConnectionDialog.ConnectServer()
             if (GlobalState.project.createItemDialog.isOpen) ProjectDialog.CreateProjectItem()
             if (GlobalState.project.openProjectDialog.isOpen) ProjectDialog.OpenProject()
             if (GlobalState.project.renameItemDialog.isOpen) ProjectDialog.RenameProjectItem()
-            if (GlobalState.project.saveFileDialog.isOpen) ProjectDialog.SaveFile(window)
+            if (GlobalState.project.saveFileDialog.isOpen) ProjectDialog.SaveFile(window)*/
         }
     }
 
@@ -196,4 +189,4 @@ object Studio {
             }
         }
     }
-} */
+}*/
