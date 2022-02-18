@@ -90,13 +90,13 @@ fun Studio(onCloseRequest: () -> Unit) {
 fun main() {
     AppData().initialise()
     val log = logger {}
+    println(File(".").listFiles()!!.map { it.path })
     val zis = ZipInputStream(FileInputStream("./studio.jar"))
     var nextEntry = zis.nextEntry
     while (nextEntry != null) {
         println(nextEntry)
         nextEntry = zis.nextEntry
     }
-    println(File(".").listFiles()!!.map { it.path })
 
     application {
         fun onCloseRequest() {
