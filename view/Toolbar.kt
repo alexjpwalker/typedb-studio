@@ -53,7 +53,8 @@ object Toolbar {
             modifier = Modifier.fillMaxWidth().height(TOOLBAR_HEIGHT),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ToolbarSpace()
+            androidx.compose.material.Text(text = "Hello World")
+            /*ToolbarSpace()
             OpenProjectButton()
             ToolbarSpace()
             SaveButton()
@@ -65,7 +66,7 @@ object Toolbar {
             DatabaseDropdown(Modifier.height(COMPONENT_HEIGHT).width(DATABASE_DROPDOWN_WIDTH))
             ToolbarSpace()
             ConnectionButton()
-            ToolbarSpace()
+            ToolbarSpace()*/
         }
     }
 
@@ -113,14 +114,14 @@ object Toolbar {
 
     @Composable
     private fun ConnectionButton() {
-        when (GlobalState.connection.status) {
+        /*when (GlobalState.connection.status) {
             DISCONNECTED -> ConnectionButton(Label.CONNECT_TO_TYPEDB)
             CONNECTING -> ConnectionButton(Label.CONNECTING)
             CONNECTED -> ConnectionButton(
                 (GlobalState.connection.current!!.username?.let { "$it@" }
                     ?: "") + GlobalState.connection.current!!.address
             )
-        }
+        }*/
     }
 
     @Composable

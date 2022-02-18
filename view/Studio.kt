@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (C) 2021 Vaticle
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,38 @@
 
 package com.vaticle.typedb.studio.view
 
-import androidx.compose.foundation.background
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.application
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+
+object Studio {
+  @JvmStatic
+  fun main(args: Array<String>) = application {
+    MainWindow()
+  }
+  @Composable
+  fun MainWindow() {
+    Window(onCloseRequest = {}) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            androidx.compose.material.Text(text = "Hello World")
+        }
+    }
+  }
+}
+
+
+/* import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -109,7 +140,7 @@ object Studio {
         ) {
             Column(modifier = Modifier.fillMaxSize().background(Theme.colors.background)) {
                 Toolbar.Layout()
-                Separator.Horizontal()
+                /*Separator.Horizontal()
                 Frame.Row(
                     modifier = Modifier.fillMaxWidth().weight(1f),
                     separator = Frame.SeparatorArgs(Separator.WEIGHT),
@@ -125,7 +156,7 @@ object Studio {
                     ) { PageArea.Layout() }
                 )
                 Separator.Horizontal()
-                StatusBar.Layout()
+                StatusBar.Layout()*/
             }
             NotificationArea.Layout()
             if (GlobalState.confirmation.dialog.isOpen) ConfirmationDialog.Layout()
@@ -165,4 +196,4 @@ object Studio {
             }
         }
     }
-}
+} */
