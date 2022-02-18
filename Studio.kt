@@ -94,7 +94,7 @@ fun main() {
     val log = logger {}
     println(File(".").listFiles()!!.map { it.path })
     val jarPath = if (Path.of("./studio.jar").exists()) "./studio.jar" else "C:/users/alex/_bazel_alex/grsqfgsz/execroot/vaticle_typedb_studio/bazel-out/x64_windows-fastbuild/bin/studio.jar"
-    val zis = ZipInputStream(FileInputStream("./studio.jar"))
+    val zis = ZipInputStream(FileInputStream(jarPath))
     var nextEntry = zis.nextEntry
     while (nextEntry != null) {
         println(nextEntry)
