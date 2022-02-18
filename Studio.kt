@@ -53,9 +53,11 @@ import mu.KotlinLogging.logger
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
-import kotlin.io.path.Path
+import kotlin.io.path.exists
 
 @Composable
 fun Studio(onCloseRequest: () -> Unit) {
@@ -91,11 +93,15 @@ fun main() {
     AppData().initialise()
     val log = logger {}
     println(File(".").listFiles()!!.map { it.path })
-    val zis = ZipInputStream(FileInputStream("./studio.jar"))
-    var nextEntry = zis.nextEntry
-    while (nextEntry != null) {
-        println(nextEntry)
-        nextEntry = zis.nextEntry
+    if (Path.of("./studio.jar").exists()) {
+        val zis = ZipInputStream(FileInputStream("./studio.jar"))
+        var nextEntry = zis.nextEntry
+        while (nextEntry != null) {
+            println(nextEntry)
+            nextEntry = zis.nextEntry
+        }
+    } else {
+        println(Files.readString(Path.of("./MANIFEST")))
     }
 
     application {
