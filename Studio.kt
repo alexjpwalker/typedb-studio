@@ -93,16 +93,14 @@ fun main() {
     AppData().initialise()
     val log = logger {}
     println(File(".").listFiles()!!.map { it.path })
-    if (Path.of("./studio.jar").exists()) {
-        val zis = ZipInputStream(FileInputStream("./studio.jar"))
-        var nextEntry = zis.nextEntry
-        while (nextEntry != null) {
-            println(nextEntry)
-            nextEntry = zis.nextEntry
-        }
-    } else {
-        println(Files.readString(Path.of("./MANIFEST")))
+    val jarPath = if (Path.of("./studio.jar").exists()) "./studio.jar" else "C:/users/alex/_bazel_alex/grsqfgsz/execroot/vaticle_typedb_studio/bazel-out/x64_windows-fastbuild/bin/studio.jar"
+    val zis = ZipInputStream(FileInputStream("./studio.jar"))
+    var nextEntry = zis.nextEntry
+    while (nextEntry != null) {
+        println(nextEntry)
+        nextEntry = zis.nextEntry
     }
+    //println(Files.readString(Path.of("./MANIFEST")))
 
     application {
         fun onCloseRequest() {
