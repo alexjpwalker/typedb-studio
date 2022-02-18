@@ -40,6 +40,7 @@ kt_jvm_library(
         "scope_definitions.yml",
         "//resources/schemes:schemes",
     ],
+    resource_strip_prefix = "resources",
     tags = ["maven_coordinates=com.vaticle.typedb:typedb-studio-view-highlighter-common:{pom_version}"],
 )
 

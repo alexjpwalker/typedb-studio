@@ -53,6 +53,7 @@ kt_jvm_library(
         "//resources/fonts/ubuntumono:ubuntu-mono",
         "//resources/icons/fontawesome:icons",
     ],
+    resource_strip_prefix = "resources",
     tags = ["maven_coordinates=com.vaticle.typedb:typedb-studio-view-common:{pom_version}"],
 )
 

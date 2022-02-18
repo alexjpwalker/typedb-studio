@@ -39,6 +39,7 @@ kt_jvm_library(
         "@maven//:org_slf4j_slf4j_api",
     ],
     data = ["typeql_scopes.yml"],
+    resource_strip_prefix = "resources",
     tags = ["maven_coordinates=com.vaticle.typedb:typedb-studio-view-highlighter-language-typeql:{pom_version}"],
 )
 
