@@ -38,6 +38,9 @@ kt_jvm_library(
         "@maven//:org_jetbrains_compose_runtime_runtime_desktop",
         "@maven//:org_slf4j_slf4j_api",
     ],
+    resources = [
+        "//resources/schemes",
+    ],
     tags = ["maven_coordinates=com.vaticle.typedb:typedb-studio-view-highlighter-language-typeql:{pom_version}"],
 )
 

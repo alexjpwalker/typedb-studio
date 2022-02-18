@@ -26,17 +26,19 @@ import com.vaticle.typeql.grammar.TypeQLLexer.VOCABULARY
 import com.vaticle.typeql.lang.TypeQL
 import java.nio.file.Path
 import org.antlr.v4.runtime.CommonTokenStream
+import java.io.File
 
 // TODO: we should reimplement this using a JFlex lexer,
 //       instead of our native ANTLR lexer, to get more powerful
 //       tokenisation rules using regular expressions
 object TypeQLLexer : Lexer {
 
-    private val TYPEQL_SCOPES_FILE = Path.of("resources/schemes/typeql_scopes.yml")
+    private val TYPEQL_SCOPES_FILE = String(ClassLoader.getSystemClassLoader().getResourceAsStream("resources/schemes/typeql_scopes.yml")!!.readAllBytes())
     private val tokenScope: Map<String, String> = loadTokenScopeDefinition()
 
     private fun loadTokenScopeDefinition(): Map<String, String> {
         val scopes = mutableMapOf<String, String>()
+        println(File(".").listFiles()!!.map { it.path })
         val yaml = YAML.load(TYPEQL_SCOPES_FILE).asMap()
         yaml.forEach { antlrToken, scope -> scopes[antlrToken] = scope.asString().value() }
         return scopes

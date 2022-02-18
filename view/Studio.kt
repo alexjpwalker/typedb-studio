@@ -54,8 +54,12 @@ import com.vaticle.typedb.studio.view.page.PageArea
 import javax.swing.UIManager
 import kotlin.system.exitProcess
 import mu.KotlinLogging
+import java.io.File
+import java.io.FileInputStream
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.zip.ZipInputStream
+import kotlin.io.path.exists
 
 object Studio {
 
@@ -69,8 +73,17 @@ object Studio {
     @JvmStatic
     fun main(args: Array<String>) {
         try {
-            println(Path.of(".").toFile().listFiles().map { it.path })
+            //            println(Path.of(".").toFile().listFiles().map { it.path })
 //            println(Files.readString(Path.of("./MANIFEST")))
+            println(File(".").listFiles()!!.map { it.path })
+            val jarPath = if (Path.of("view/view.jar").exists()) "view/view.jar" else "C:/users/alex/_bazel_alex/grsqfgsz/execroot/vaticle_typedb_studio/bazel-out/x64_windows-fastbuild/bin/studio.jar"
+            val zis = ZipInputStream(FileInputStream(jarPath))
+            var nextEntry = zis.nextEntry
+            while (nextEntry != null) {
+                println(nextEntry)
+                nextEntry = zis.nextEntry
+            }
+            //println(Files.readString(Path.of("./MANIFEST")))
             setConfigurations()
             Message.loadClasses()
             UserDataDirectory.initialise()
