@@ -36,11 +36,6 @@ kt_jvm_library(
         "@maven//:org_jetbrains_compose_ui_ui_graphics_desktop",
         "@maven//:org_slf4j_slf4j_api",
     ],
-    resources = [
-        "scope_definitions.yml",
-        "//resources/schemes:schemes",
-    ],
-    resource_strip_prefix = "resources",
     tags = ["maven_coordinates=com.vaticle.typedb:typedb-studio-view-highlighter-common:{pom_version}"],
 )
 

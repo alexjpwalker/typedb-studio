@@ -70,7 +70,7 @@ object Studio {
     fun main(args: Array<String>) {
         try {
             println(Path.of(".").toFile().listFiles().map { it.path })
-            println(Files.readString(Path.of("./MANIFEST")))
+//            println(Files.readString(Path.of("./MANIFEST")))
             setConfigurations()
             Message.loadClasses()
             UserDataDirectory.initialise()

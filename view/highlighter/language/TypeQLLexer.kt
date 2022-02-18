@@ -32,7 +32,7 @@ import org.antlr.v4.runtime.CommonTokenStream
 //       tokenisation rules using regular expressions
 object TypeQLLexer : Lexer {
 
-    private val TYPEQL_SCOPES_FILE = Path.of("view/highlighter/language/typeql_scopes.yml")
+    private val TYPEQL_SCOPES_FILE = Path.of("resources/schemes/typeql_scopes.yml")
     private val tokenScope: Map<String, String> = loadTokenScopeDefinition()
 
     private fun loadTokenScopeDefinition(): Map<String, String> {

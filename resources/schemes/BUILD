@@ -17,13 +17,11 @@
 
 load("@vaticle_dependencies//tool/checkstyle:rules.bzl", "checkstyle_test")
 
-package(default_visibility = ["//view/highlighter:__subpackages__"])
+package(default_visibility = ["//:__subpackages__"])
 
 filegroup(
     name = "schemes",
-    srcs = [
-        "typeql_dark.yml",
-    ]
+    srcs = glob(["*.yml"])
 )
 
 checkstyle_test(

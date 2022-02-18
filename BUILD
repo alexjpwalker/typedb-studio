@@ -27,6 +27,14 @@ load("@vaticle_bazel_distribution//brew:rules.bzl", "deploy_brew")
 load("@io_bazel_rules_kotlin//kotlin/internal:toolchains.bzl", "define_kt_toolchain")
 load("@vaticle_bazel_distribution//platform/jvm:rules.bzl", "assemble_jvm_platform")
 
+resources = [
+    "//resources/fonts/monaco:monaco",
+    "//resources/fonts/titilliumweb:titillium-web",
+    "//resources/fonts/ubuntumono:ubuntu-mono",
+    "//resources/icons/fontawesome:icons",
+    "//resources/schemes",
+]
+
 java_binary(
     name = "studio-bin-mac",
     main_class = "com.vaticle.typedb.studio.view.Studio",
@@ -34,6 +42,8 @@ java_binary(
         "//view:view",
         "@maven//:org_jetbrains_skiko_skiko_jvm_runtime_macos_x64",
     ],
+    resources = resources,
+    resource_strip_prefix = "resources",
     classpath_resources = ["//config/logback:logback-test-xml"],
 )
 
@@ -44,6 +54,8 @@ java_binary(
         "//view:view",
         "@maven//:org_jetbrains_skiko_skiko_jvm_runtime_windows_x64",
     ],
+    resources = resources,
+    resource_strip_prefix = "resources",
     classpath_resources = ["//config/logback:logback-test-xml"],
 )
 
@@ -54,6 +66,8 @@ java_binary(
         "//view:view",
         "@maven//:org_jetbrains_skiko_skiko_jvm_runtime_linux_x64",
     ],
+    resources = resources,
+    resource_strip_prefix = "resources",
     classpath_resources = ["//config/logback:logback-test-xml"],
 )
 

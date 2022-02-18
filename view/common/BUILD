@@ -47,13 +47,6 @@ kt_jvm_library(
         "@maven//:org_jetbrains_kotlinx_kotlinx_coroutines_core_jvm",
         "@maven//:org_slf4j_slf4j_api",
     ],
-    resources = [
-        "//resources/fonts/monaco:monaco",
-        "//resources/fonts/titilliumweb:titillium-web",
-        "//resources/fonts/ubuntumono:ubuntu-mono",
-        "//resources/icons/fontawesome:icons",
-    ],
-    resource_strip_prefix = "resources",
     tags = ["maven_coordinates=com.vaticle.typedb:typedb-studio-view-common:{pom_version}"],
 )
 
