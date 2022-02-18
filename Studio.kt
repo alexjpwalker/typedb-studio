@@ -50,6 +50,12 @@ import com.vaticle.typedb.studio.storage.AppData
 import com.vaticle.typedb.studio.ui.elements.StudioSnackbarHost
 import com.vaticle.typedb.studio.workspace.WorkspaceScreen
 import mu.KotlinLogging.logger
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
+import kotlin.io.path.Path
 
 @Composable
 fun Studio(onCloseRequest: () -> Unit) {
@@ -84,6 +90,13 @@ fun Studio(onCloseRequest: () -> Unit) {
 fun main() {
     AppData().initialise()
     val log = logger {}
+    val zis = ZipInputStream(FileInputStream("./studio.jar"))
+    var nextEntry = zis.nextEntry
+    while (nextEntry != null) {
+        println(nextEntry)
+        nextEntry = zis.nextEntry
+    }
+    println(File(".").listFiles()!!.map { it.path })
 
     application {
         fun onCloseRequest() {
