@@ -76,13 +76,13 @@ object Studio {
             //            println(Path.of(".").toFile().listFiles().map { it.path })
 //            println(Files.readString(Path.of("./MANIFEST")))
             println(File(".").listFiles()!!.map { it.path })
-            val jarPath = if (Path.of("view/view.jar").exists()) "view/view.jar" else "C:/users/alex/_bazel_alex/grsqfgsz/execroot/vaticle_typedb_studio/bazel-out/x64_windows-fastbuild/bin/studio.jar"
-            val zis = ZipInputStream(FileInputStream(jarPath))
-            var nextEntry = zis.nextEntry
-            while (nextEntry != null) {
-                println(nextEntry)
-                nextEntry = zis.nextEntry
-            }
+//            val jarPath = if (Path.of("view/view.jar").exists()) "view/view.jar" else "C:/users/alex/_bazel_alex/grsqfgsz/execroot/vaticle_typedb_studio/bazel-out/x64_windows-fastbuild/bin/studio.jar"
+//            val zis = ZipInputStream(FileInputStream(jarPath))
+//            var nextEntry = zis.nextEntry
+//            while (nextEntry != null) {
+//                println(nextEntry)
+//                nextEntry = zis.nextEntry
+//            }
             //println(Files.readString(Path.of("./MANIFEST")))
             setConfigurations()
             Message.loadClasses()
