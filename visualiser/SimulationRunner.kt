@@ -24,6 +24,7 @@ import com.vaticle.typedb.client.common.exception.TypeDBClientException
 import com.vaticle.typedb.common.collection.Either
 import com.vaticle.typedb.studio.data.GraphData
 import com.vaticle.typedb.studio.data.QueryResponseStream
+import com.vaticle.typedb.studio.data.VertexData
 import com.vaticle.typedb.studio.diagnostics.ErrorReporter
 import kotlinx.coroutines.CoroutineScope
 import mu.KotlinLogging.logger
@@ -35,6 +36,7 @@ suspend fun runSimulation(
 ) {
     val log = logger {}
     val errorReporter = ErrorReporter(log, snackbarHostState, snackbarCoroutineScope)
+    val verticesByID: MutableMap<Int, VertexState> = mutableMapOf()
 
     fun fetchNewData() {
         if (dataStream.isEmpty()) return
@@ -42,8 +44,10 @@ suspend fun runSimulation(
         val response: Either<GraphData, Exception> = dataStream.drain()
         if (response.isFirst) {
             val graphData: GraphData = response.first()
-            simulation.addVertices(graphData.vertices.map(::vertexStateOf))
-            simulation.addEdges(graphData.edges.map(::edgeStateOf))
+            val vertexStates = graphData.vertices.map(::vertexStateOf)
+            vertexStates.forEach { verticesByID[it.id] = it }
+            simulation.addVertices(vertexStates)
+            simulation.addEdges(graphData.edges.map { edgeStateOf(data = it, source = verticesByID[it.source]!!, target = verticesByID[it.target]!!) })
             simulation.addVertexExplanations(graphData.explanationVertices.map(::vertexExplanationStateOf))
             if (simulation.alpha() < 0.3) simulation.alpha(0.3)
         } else {

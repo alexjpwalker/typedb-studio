@@ -19,38 +19,51 @@
 package com.vaticle.typedb.studio.visualiser
 
 import androidx.compose.ui.geometry.Offset
-import com.vaticle.force.graph.CenterForce
-import com.vaticle.force.graph.CollideForce
-import com.vaticle.force.graph.ForceSimulation
-import com.vaticle.force.graph.Link
-import com.vaticle.force.graph.LinkForce
-import com.vaticle.force.graph.ManyBodyForce
-import com.vaticle.force.graph.Node
-import com.vaticle.force.graph.RandomEffects
-import com.vaticle.force.graph.XForce
-import com.vaticle.force.graph.YForce
-import java.lang.IllegalStateException
+import com.vaticle.force.graph.api.Link
+import com.vaticle.force.graph.api.Node
+import com.vaticle.force.graph.force.CenterForce
+import com.vaticle.force.graph.force.LinkForce
+import com.vaticle.force.graph.force.ManyBodyForce
+import com.vaticle.force.graph.force.XForce
+import com.vaticle.force.graph.force.YForce
+import com.vaticle.force.graph.impl.BasicNode
+import com.vaticle.force.graph.impl.BasicSimulation
+import com.vaticle.force.graph.util.RandomEffects
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.math.max
-import kotlin.math.min
 
-class TypeDBForceSimulation(val data: GraphState = GraphState()) : ForceSimulation() {
-
+class TypeDBForceSimulation(val data: GraphState = GraphState()) : BasicSimulation() {
     var lastTickStartNanos: Long = 0
     var isStarted = false
     private val nextHyperedgeNodeID = AtomicInteger(-1)
-    private val vertexNodes: MutableCollection<Node> = mutableListOf()
+    private val vertexNodes: MutableCollection<VertexState> = mutableListOf()
     val hyperedgeNodes: MutableMap<Int, Node> = mutableMapOf()
+    var linkForce: LinkForce? = null
+    var chargeForce: ManyBodyForce? = null
+    var centerForce: CenterForce? = null
+    var xForce: XForce? = null
+    var yForce: YForce? = null
 
     fun init() {
         clear()
-        addNodes(data.vertices.map { InputNode(it.id) })
-        force("center", CenterForce(nodes().values, 0.0, 0.0))
-        force("collide", CollideForce(vertexNodes, 80.0))
-        force("charge", ManyBodyForce(vertexNodes, -100.0))
-        force("x", XForce(vertexNodes, 0.0, 0.05))
-        force("y", YForce(vertexNodes, 0.0, 0.05))
-        force("hyperedgeCollide", CollideForce(hyperedgeNodes.values, 40.0))
+        placeNodes(data.vertices as Collection<Node>?)
+        CenterForce(nodes(), 0.0, 0.0).let {
+            centerForce = it
+            addForce(it)
+        }
+        addCollideForce(vertexNodes as Collection<Node>?, 80.0)
+        ManyBodyForce(vertexNodes as Collection<Node>?, -100.0).let {
+            chargeForce = it
+            addForce(it)
+        }
+        XForce(vertexNodes as Collection<Node>?, 0.0, 0.05).let {
+            xForce = it
+            addForce(it)
+        }
+        YForce(vertexNodes as Collection<Node>?, 0.0, 0.05).let {
+            yForce = it
+            addForce(it)
+        }
+        addCollideForce(hyperedgeNodes.values as Collection<Node>?, 40.0)
         alpha(1.0)
         alphaTarget(0.0)
         alphaMin(0.01)
@@ -65,19 +78,13 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : ForceSimulati
 
     override fun tick() {
         super.tick()
-        data.vertices.forEach {
-            val node = nodes()[it.id]
-                ?: throw IllegalStateException("Received bad simulation data: no entry received for vertex ID ${it.id}!")
-            it.position = Offset(node.x().toFloat(), node.y().toFloat())
-        }
         val verticesByID: Map<Int, VertexState> = data.vertices.associateBy { it.id }
         data.edges.forEach {
             it.sourcePosition = verticesByID[it.sourceID]!!.position
             it.targetPosition = verticesByID[it.targetID]!!.position
         }
-        val hyperedgeNodesByNodeID: Map<Int, Node> = hyperedgeNodes.values.associateBy { it.index() }
         data.hyperedges.forEach {
-            val hyperedgeNode = hyperedgeNodesByNodeID[it.hyperedgeNodeID]
+            val hyperedgeNode = hyperedgeNodes[it.hyperedgeNodeID]
                 ?: throw IllegalStateException("Received bad simulation data: no hyperedge node found with ID ${it.hyperedgeNodeID}!")
             it.position = Offset(hyperedgeNode.x().toFloat(), hyperedgeNode.y().toFloat())
         }
@@ -94,24 +101,24 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : ForceSimulati
 
     fun addVertices(vertices: List<VertexState>) {
         if (vertices.isEmpty()) return
+        vertexNodes += vertices
         data.vertices += vertices
-        val newVertices = vertices.map { InputNode(it.id) }
-        val addedNodes = addNodes(newVertices)
-        vertexNodes += addedNodes
+        placeNodes(vertices)
     }
 
     fun addEdges(edges: List<EdgeState>) {
         if (edges.isEmpty()) return
         data.edges += edges
-        val links: MutableCollection<Link> = mutableListOf()
-        data.edges.forEach {
-            val sourceNode = nodes()[it.sourceID]
-            val targetNode = nodes()[it.targetID]
-            if (sourceNode != null && targetNode != null) links += Link(nodes()[it.sourceID], nodes()[it.targetID])
-            else println("addEdges: Could not create link force for $it because one of its nodes is not in the simulation!")
+        LinkForce(vertexNodes as Collection<Node>?, data.edges as Collection<Link>?, 90.0, 0.5).let {
+            linkForce?.let { existing -> removeForce(existing) }
+            linkForce = it
+            addForce(it)
         }
-        force("link", LinkForce(vertexNodes, links, 90.0, 0.5))
-        force("charge", ManyBodyForce(vertexNodes, -600.0 * data.edges.size / (data.vertices.size + 1)))
+        ManyBodyForce(vertexNodes as Collection<Node>?, -600.0 * data.edges.size / (data.vertices.size + 1)).let {
+            chargeForce?.let { existing -> removeForce(existing) }
+            chargeForce = it
+            addForce(it)
+        }
 
         val edgesBySource = data.edges.groupBy { it.sourceID }
         edges.forEach { edge ->
@@ -126,23 +133,21 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : ForceSimulati
     private fun addEdgeBandMember(edge: EdgeState) {
         if (edge.id !in hyperedgeNodes) {
             val edgeMidpoint = edgeMidpoint(edge)
-            val nodeID = nextHyperedgeNodeID.getAndAdd(-1)
-            val node = Node(nodeID, edgeMidpoint.x, edgeMidpoint.y)
-            nodes()[nodeID] = node
-            hyperedgeNodes[edge.id] = node
-
-            val placementOffset = RandomEffects.jiggle()
-            force("x_$nodeID", XForce(listOf(node), { edgeMidpoint(edge).x + placementOffset }, 0.35))
-            force("y_$nodeID", YForce(listOf(node), { edgeMidpoint(edge).y + placementOffset }, 0.35))
-            data.hyperedges += HyperedgeState(edge.id, nodeID)
+            val hyperedgeNodeID = nextHyperedgeNodeID.getAndAdd(-1)
+            BasicNode(edgeMidpoint.x, edgeMidpoint.y).let {
+                placeNode(it)
+                hyperedgeNodes[hyperedgeNodeID] = it
+                val placementOffset = RandomEffects.jiggle()
+                addForce(XForce(listOf(it), { edgeMidpoint(edge).x + placementOffset }, 0.35))
+                addForce(YForce(listOf(it), { edgeMidpoint(edge).y + placementOffset }, 0.35))
+            }
+            data.hyperedges += HyperedgeState(edge.id, hyperedgeNodeID)
         }
     }
 
     private fun edgeMidpoint(edge: EdgeState): Point {
-        val node1 = nodes()[edge.sourceID]
-        val node2 = nodes()[edge.targetID]
-        if (node1 == null || node2 == null)
-            throw IllegalStateException("edgeMidpoint: Either the source or the target node is not present in the simulation!")
+        val node1 = edge.source
+        val node2 = edge.target
         return Point((node1.x() + node2.x()) / 2, (node1.y() + node2.y()) / 2)
     }
 

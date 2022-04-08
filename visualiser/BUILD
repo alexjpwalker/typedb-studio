@@ -32,7 +32,7 @@ kt_jvm_library(
         "//routing",
 
         # External dependencies from @vaticle
-        "@vaticle_force_graph//:force-graph",
+        "@vaticle_force_graph//:force_graph",
 
         # Maven
         "@maven//:org_jetbrains_compose_desktop_desktop_jvm",

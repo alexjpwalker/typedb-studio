@@ -53,9 +53,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
-import com.vaticle.force.graph.Link
-import com.vaticle.force.graph.LinkForce
-import com.vaticle.force.graph.Node
+import com.vaticle.force.graph.force.LinkForce
+import com.vaticle.force.graph.impl.BasicLink
 import com.vaticle.typedb.client.common.exception.TypeDBClientException
 import com.vaticle.typedb.studio.appearance.StudioTheme
 import com.vaticle.typedb.studio.appearance.VisualiserTheme
@@ -121,7 +120,7 @@ fun WorkspaceScreen(
             ExecutionTabState(title = "Query1 : run1")
         ) }
         var activeExecutionTabIndex by remember { mutableStateOf(0) }
-        val temporarilyFrozenNodeIDs = remember { mutableStateListOf<Int>() }
+        val temporarilyFrozenNodes = remember { mutableStateListOf<VertexState>() }
 
         val db = routeData.db
         val activeQueryTab: QueryTabState? = queryTabs.getOrNull(activeQueryTabIndex)
@@ -348,61 +347,78 @@ fun WorkspaceScreen(
 
                     // TODO: this drag logic is too complex - should be extracted out into a VM (maybe TypeDBForceSimulation)
                     fun onVertexDragStart(vertex: VertexState) {
-                        forceSimulation.nodes()[vertex.id]?.let { node: Node ->
-                            node.isXFixed = true
-                            node.isYFixed = true
+                        vertex.xFixed = true
+                        vertex.yFixed = true
+
+                        forceSimulation.chargeForce?.let {
+                            forceSimulation.removeForce(it)
+                            forceSimulation.chargeForce = null
+                        }
+                        forceSimulation.centerForce?.let {
+                            forceSimulation.removeForce(it)
+                            forceSimulation.centerForce = null
+                        }
+                        forceSimulation.xForce?.let {
+                            forceSimulation.removeForce(it)
+                            forceSimulation.xForce = null
+                        }
+                        forceSimulation.yForce?.let {
+                            forceSimulation.removeForce(it)
+                            forceSimulation.yForce = null
                         }
                         forceSimulation
-                            .force("charge", null)
-                            .force("center", null)
-                            .force("x", null)
-                            .force("y", null)
                             .alpha(0.25)
                             .alphaDecay(0.0)
 
+                        forceSimulation.linkForce?.let {
+                            forceSimulation.removeForce(it)
+                            forceSimulation.linkForce = null
+                        }
                         if (forceSimulation.data.edges.any { it.targetID == vertex.id && it.encoding == ROLEPLAYER }) {
                             val attributeEdges = forceSimulation.data.edges
                                 .filter { it.sourceID == vertex.id && it.encoding == HAS }
-                            val attributeNodeIDs = attributeEdges.map { it.targetID }
+                            val attributeNodes = attributeEdges.map { it.target }
                             val roleplayerEdges = forceSimulation.data.edges
                                 .filter { it.targetID == vertex.id && it.encoding == ROLEPLAYER }
                                 .map { it.sourceID }
                                 .flatMap { relationNodeID -> forceSimulation.data.edges
                                     .filter { it.sourceID == relationNodeID && it.encoding == ROLEPLAYER } }
-                            val relationNodeIDs = roleplayerEdges.map { it.sourceID }
-                            val roleplayerNodeIDs = roleplayerEdges.map { it.targetID }
-                            val nodeIDs = (attributeNodeIDs + relationNodeIDs + roleplayerNodeIDs).toSet()
-                            val nodes = nodeIDs.map { forceSimulation.nodes()[it] }
-                            val links = (attributeEdges + roleplayerEdges)
-                                .map { Link(forceSimulation.nodes()[it.sourceID], forceSimulation.nodes()[it.targetID]) }
-                            val nodeIDsToFreeze = roleplayerNodeIDs
-                                .filter { it != vertex.id && forceSimulation.nodes()[it]?.isXFixed == false }
-                            nodeIDsToFreeze.forEach {
-                                forceSimulation.nodes()[it]?.isXFixed = true
-                                forceSimulation.nodes()[it]?.isYFixed = true
+                            val relationNodes = roleplayerEdges.map { it.source }
+                            val roleplayerNodes = roleplayerEdges.map { it.target }
+                            val nodes = (attributeNodes + relationNodes + roleplayerNodes).toSet()
+                            val links = attributeEdges + roleplayerEdges
+                            val nodesToFreeze = roleplayerNodes
+                                .filter { it != vertex && !it.isXFixed }
+                            nodesToFreeze.forEach {
+                                it.xFixed = true
+                                it.yFixed = true
                             }
-                            temporarilyFrozenNodeIDs += nodeIDsToFreeze
-                            forceSimulation.force("link", LinkForce(nodes, links, 90.0, 0.25))
-                        } else {
-                            forceSimulation.force("link", null)
+                            temporarilyFrozenNodes += nodesToFreeze
+                            LinkForce(nodes, links, 90.0, 0.25).let {
+                                forceSimulation.linkForce = it
+                                forceSimulation.addForce(it)
+                            }
                         }
                     }
 
                     fun onVertexDragMove(vertex: VertexState, position: Offset) {
-                        forceSimulation.nodes()[vertex.id]?.let { node: Node ->
-                            node.x(position.x.toDouble())
-                            node.y(position.y.toDouble())
+                        vertex.let {
+                            it.x(position.x.toDouble())
+                            it.y(position.y.toDouble())
                         }
                     }
 
                     fun onVertexDragEnd() {
-                        forceSimulation.force("link", null)
-                        forceSimulation.alphaDecay(1 - forceSimulation.alphaMin().pow(1.0 / 300))
-                        temporarilyFrozenNodeIDs.forEach {
-                            forceSimulation.nodes()[it]?.isXFixed = false
-                            forceSimulation.nodes()[it]?.isYFixed = false
+                        forceSimulation.linkForce?.let {
+                            forceSimulation.removeForce(it)
+                            forceSimulation.linkForce = null
                         }
-                        temporarilyFrozenNodeIDs.clear()
+                        forceSimulation.alphaDecay(1 - forceSimulation.alphaMin().pow(1.0 / 300))
+                        temporarilyFrozenNodes.forEach {
+                            it.xFixed = false
+                            it.yFixed = false
+                        }
+                        temporarilyFrozenNodes.clear()
                     }
 
                     TypeDBVisualiser(modifier = Modifier.fillMaxSize().onGloballyPositioned { visualiserSize = it.size.toSize() / pixelDensity },

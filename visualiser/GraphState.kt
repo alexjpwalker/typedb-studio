@@ -26,6 +26,8 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import com.vaticle.force.graph.api.Link
+import com.vaticle.force.graph.api.Node
 import com.vaticle.typedb.client.api.concept.Concept
 import com.vaticle.typedb.studio.data.EdgeData
 import com.vaticle.typedb.studio.data.EdgeEncoding
@@ -53,24 +55,67 @@ class GraphState {
 }
 
 data class VertexState(val concept: Concept, val id: Int, val encoding: VertexEncoding, val label: String, val shortLabel: String,
-                       val width: Float, val height: Float, val inferred: Boolean) {
+                       val width: Float, val height: Float, val inferred: Boolean): com.vaticle.force.graph.api.Node {
     var position: Offset by mutableStateOf(Offset(0F, 0F))
 
     val rect: Rect
     get() = Rect(position - Offset(width, height) / 2F, Size(width, height))
+
+    private var vx = 0.0
+    private var vy = 0.0
+    var xFixed = false
+    var yFixed = false
+
+    override fun isXFixed(): Boolean = xFixed
+
+    override fun isYFixed(): Boolean = yFixed
+
+    override fun x(): Double = position.x.toDouble()
+
+    override fun x(value: Double) {
+        position = position.copy(x = value.toFloat())
+    }
+
+    override fun y(): Double = position.y.toDouble()
+
+    override fun y(value: Double) {
+        position = position.copy(y = value.toFloat())
+    }
+
+    override fun vx(): Double = vx
+
+    override fun vx(value: Double) {
+        vx = value
+    }
+
+    override fun vy(): Double = vy
+
+    override fun vy(value: Double) {
+        vy = value
+    }
 }
 
 fun vertexStateOf(data: VertexData): VertexState {
     return VertexState(data.concept, data.id, data.encoding, data.label, data.shortLabel, data.width, data.height, data.inferred)
 }
 
-data class EdgeState(val id: Int, val sourceID: Int = -1, val targetID: Int = -1, val encoding: EdgeEncoding, val label: String, val inferred: Boolean) {
+data class EdgeState(val id: Int, val source: VertexState, val sourceID: Int = -1, val target: VertexState,
+                     val targetID: Int = -1, val encoding: EdgeEncoding, val label: String,
+                     val inferred: Boolean): Link {
     var sourcePosition: Offset by mutableStateOf(Offset(0F, 0F))
     var targetPosition: Offset by mutableStateOf(Offset(0F, 0F))
+
+    override fun source(): Node {
+        return source
+    }
+
+    override fun target(): Node {
+        return target
+    }
 }
 
-fun edgeStateOf(data: EdgeData): EdgeState {
-    return EdgeState(data.id, data.source, data.target, data.encoding, data.label, data.inferred)
+fun edgeStateOf(data: EdgeData, source: VertexState, target: VertexState): EdgeState {
+    return EdgeState(data.id, source, data.source, target, data.target, data.encoding, data.label, data.inferred)
 }
 
 data class HyperedgeState(val edgeID: Int, val hyperedgeNodeID: Int) {
