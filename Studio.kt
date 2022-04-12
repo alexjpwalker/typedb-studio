@@ -70,7 +70,7 @@ fun Studio(onCloseRequest: () -> Unit) {
                 when (val routeData = Router.currentRoute) {
                     is ConnectionRoute -> ConnectionScreen.Main(routeData, snackbarHostState)
                     is WorkspaceRoute -> WorkspaceScreen(
-                        routeData, defaultVisualiserTheme(), window, titleBarHeight, snackbarHostState
+                        routeData, defaultVisualiserTheme(), window, snackbarHostState
                     )
                 }
                 Box(modifier = Modifier.fillMaxHeight(), contentAlignment = Alignment.BottomCenter) {

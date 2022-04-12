@@ -19,15 +19,15 @@
 package com.vaticle.typedb.studio.visualiser
 
 import androidx.compose.ui.geometry.Offset
-import com.vaticle.force.graph.api.Link
-import com.vaticle.force.graph.api.Node
+import com.vaticle.force.graph.api.Edge
+import com.vaticle.force.graph.api.Vertex
 import com.vaticle.force.graph.force.CenterForce
 import com.vaticle.force.graph.force.LinkForce
 import com.vaticle.force.graph.force.ManyBodyForce
 import com.vaticle.force.graph.force.XForce
 import com.vaticle.force.graph.force.YForce
-import com.vaticle.force.graph.impl.BasicNode
 import com.vaticle.force.graph.impl.BasicSimulation
+import com.vaticle.force.graph.impl.BasicVertex
 import com.vaticle.force.graph.util.RandomEffects
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -35,8 +35,8 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : BasicSimulati
     var lastTickStartNanos: Long = 0
     var isStarted = false
     private val nextHyperedgeNodeID = AtomicInteger(-1)
-    private val vertexNodes: MutableCollection<VertexState> = mutableListOf()
-    val hyperedgeNodes: MutableMap<Int, Node> = mutableMapOf()
+    private val vertices: MutableCollection<VertexState> = mutableListOf()
+    val hyperedgeNodes: MutableMap<Int, Vertex> = mutableMapOf()
     var linkForce: LinkForce? = null
     var chargeForce: ManyBodyForce? = null
     var centerForce: CenterForce? = null
@@ -45,25 +45,14 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : BasicSimulati
 
     fun init() {
         clear()
-        placeNodes(data.vertices as Collection<Node>?)
-        CenterForce(nodes(), 0.0, 0.0).let {
-            centerForce = it
-            addForce(it)
-        }
-        addCollideForce(vertexNodes as Collection<Node>?, 80.0)
-        ManyBodyForce(vertexNodes as Collection<Node>?, -100.0).let {
-            chargeForce = it
-            addForce(it)
-        }
-        XForce(vertexNodes as Collection<Node>?, 0.0, 0.05).let {
-            xForce = it
-            addForce(it)
-        }
-        YForce(vertexNodes as Collection<Node>?, 0.0, 0.05).let {
-            yForce = it
-            addForce(it)
-        }
-        addCollideForce(hyperedgeNodes.values as Collection<Node>?, 40.0)
+        placeVertices(data.vertices as Collection<Vertex>)
+        val vertexCollection = vertices as Collection<Vertex>
+        centerForce = forces().addCenterForce(vertexCollection, 0.0, 0.0)
+        forces().addCollideForce(vertexCollection, 80.0)
+        chargeForce = forces().addManyBodyForce(vertexCollection, -100.0)
+        xForce = forces().addXForce(vertexCollection, 0.0, 0.05)
+        yForce = forces().addYForce(vertexCollection, 0.0, 0.05)
+        forces().addCollideForce(hyperedgeNodes.values as Collection<Vertex>, 40.0)
         alpha(1.0)
         alphaTarget(0.0)
         alphaMin(0.01)
@@ -73,7 +62,7 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : BasicSimulati
     }
 
     fun isEmpty(): Boolean {
-        return nodes().isEmpty()
+        return vertices.isEmpty()
     }
 
     override fun tick() {
@@ -94,31 +83,27 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : BasicSimulati
         super.clear()
         isStarted = false
         data.clear()
-        vertexNodes.clear()
+        vertices.clear()
         hyperedgeNodes.clear()
         nextHyperedgeNodeID.set(-1)
     }
 
     fun addVertices(vertices: List<VertexState>) {
         if (vertices.isEmpty()) return
-        vertexNodes += vertices
+        this.vertices += vertices
         data.vertices += vertices
-        placeNodes(vertices)
+        placeVertices(vertices)
     }
 
     fun addEdges(edges: List<EdgeState>) {
         if (edges.isEmpty()) return
         data.edges += edges
-        LinkForce(vertexNodes as Collection<Node>?, data.edges as Collection<Link>?, 90.0, 0.5).let {
-            linkForce?.let { existing -> removeForce(existing) }
-            linkForce = it
-            addForce(it)
-        }
-        ManyBodyForce(vertexNodes as Collection<Node>?, -600.0 * data.edges.size / (data.vertices.size + 1)).let {
-            chargeForce?.let { existing -> removeForce(existing) }
-            chargeForce = it
-            addForce(it)
-        }
+        val vertexCollection = vertices as Collection<Vertex>
+        val edgeCollection = data.edges as Collection<Edge>
+        linkForce?.let { existing -> forces().remove(existing) }
+        linkForce = forces().addLinkForce(vertexCollection, edgeCollection, 90.0, 0.5)
+        chargeForce?.let { existing -> forces().remove(existing) }
+        chargeForce = forces().addManyBodyForce(vertexCollection, -600.0 * data.edges.size / (data.vertices.size + 1))
 
         val edgesBySource = data.edges.groupBy { it.sourceID }
         edges.forEach { edge ->
@@ -130,16 +115,36 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : BasicSimulati
         }
     }
 
+    fun removeChargeForce() {
+        chargeForce?.let { forces().remove(it); chargeForce = null }
+    }
+
+    fun removeCenterForce() {
+        centerForce?.let { forces().remove(it); centerForce = null }
+    }
+
+    fun removeXForce() {
+        xForce?.let { forces().remove(it); xForce = null }
+    }
+
+    fun removeYForce() {
+        yForce?.let { forces().remove(it); yForce = null }
+    }
+
+    fun removeLinkForce() {
+        linkForce?.let { forces().remove(it); linkForce = null }
+    }
+
     private fun addEdgeBandMember(edge: EdgeState) {
         if (edge.id !in hyperedgeNodes) {
             val edgeMidpoint = edgeMidpoint(edge)
             val hyperedgeNodeID = nextHyperedgeNodeID.getAndAdd(-1)
-            BasicNode(edgeMidpoint.x, edgeMidpoint.y).let {
+            BasicVertex(edgeMidpoint.x, edgeMidpoint.y).let {
                 placeNode(it)
                 hyperedgeNodes[hyperedgeNodeID] = it
                 val placementOffset = RandomEffects.jiggle()
-                addForce(XForce(listOf(it), { edgeMidpoint(edge).x + placementOffset }, 0.35))
-                addForce(YForce(listOf(it), { edgeMidpoint(edge).y + placementOffset }, 0.35))
+                forces().addXForce(listOf(it), { edgeMidpoint(edge).x + placementOffset }, 0.35)
+                forces().addYForce(listOf(it), { edgeMidpoint(edge).y + placementOffset }, 0.35)
             }
             data.hyperedges += HyperedgeState(edge.id, hyperedgeNodeID)
         }

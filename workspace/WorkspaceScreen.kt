@@ -53,8 +53,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
-import com.vaticle.force.graph.force.LinkForce
-import com.vaticle.force.graph.impl.BasicLink
 import com.vaticle.typedb.client.common.exception.TypeDBClientException
 import com.vaticle.typedb.studio.appearance.StudioTheme
 import com.vaticle.typedb.studio.appearance.VisualiserTheme
@@ -87,18 +85,12 @@ import java.nio.file.Path
 import kotlin.math.pow
 
 @Composable
-fun WorkspaceScreen(
-    routeData: WorkspaceRoute, visualiserTheme: VisualiserTheme, window: ComposeWindow,
-    titleBarHeight: Float, snackbarHostState: SnackbarHostState
-) {
-
+fun WorkspaceScreen(routeData: WorkspaceRoute, visualiserTheme: VisualiserTheme, window: ComposeWindow, snackbarHostState: SnackbarHostState) {
     val snackbarCoroutineScope = rememberCoroutineScope()
     val log = remember { logger {} }
     val errorReporter = rememberErrorReporter(log, snackbarHostState, snackbarCoroutineScope)
-//    val workspace = remember { workspaceScreenStateOf(routeData) }
 
     Column(Modifier.fillMaxSize()) {
-
         // TODO: combine these into meaningful groups of state objects
         var queryResponseStream: QueryResponseStream by remember { mutableStateOf(emptyQueryResponseStream()) }
         val forceSimulation: TypeDBForceSimulation by remember { mutableStateOf(TypeDBForceSimulation()) }
@@ -116,15 +108,10 @@ fun WorkspaceScreen(
         ) }
         var queryTabNextIndex by remember { mutableStateOf(2) }
         var activeQueryTabIndex by remember { mutableStateOf(0) }
-        val executionTabs: MutableList<ExecutionTabState> = remember { mutableStateListOf(
-            ExecutionTabState(title = "Query1 : run1")
-        ) }
-        var activeExecutionTabIndex by remember { mutableStateOf(0) }
         val temporarilyFrozenNodes = remember { mutableStateListOf<VertexState>() }
 
         val db = routeData.db
         val activeQueryTab: QueryTabState? = queryTabs.getOrNull(activeQueryTabIndex)
-        val activeExecutionTab: ExecutionTabState = executionTabs[activeExecutionTabIndex]
 
         // TODO: with this many callbacks, the view becomes unreadable - create a VM (ToolbarViewModel?)
         fun switchWorkspace(dbName: String) {
@@ -241,9 +228,7 @@ fun WorkspaceScreen(
             }
         }
 
-        Toolbar(dbName = db.name, onDBNameChange = { dbName -> switchWorkspace(dbName) },
-            allDBNames = remember { routeData.connectionForm.allDBNames }, onOpen = { openOpenQueryDialog() },
-            onSave = { openSaveQueryDialog() }, onRun = { runQuery() }, onLogout = { logout() })
+        Toolbar(dbName = db.name, onOpen = { openOpenQueryDialog() }, onSave = { openSaveQueryDialog() }, onRun = { runQuery() }, onLogout = { logout() })
 
         Row(modifier = Modifier.fillMaxWidth().height(1.dp).background(StudioTheme.colors.uiElementBorder)) {}
 
@@ -251,19 +236,7 @@ fun WorkspaceScreen(
             var showQuerySettingsPanel by remember { mutableStateOf(true) }
             var showConceptPanel by remember { mutableStateOf(true) }
 
-//            Column(modifier = Modifier.width(20.dp)) {
-//                StudioTabs(orientation = TabOrientation.BOTTOM_TO_TOP) {
-//                    StudioTab("Schema Explorer", selected = false, leadingIcon = { StudioIcon(Icon.Layout) })
-//                    StudioTab("Permissions", selected = false, leadingIcon = { StudioIcon(Icon.Shield) })
-//                }
-//                Row(modifier = Modifier.weight(1f)) {}
-//                Row(modifier = Modifier.fillMaxWidth().height(1.dp).background(StudioTheme.colors.uiElementBorder)) {}
-//            }
-//
-//            Column(modifier = Modifier.fillMaxHeight().width(1.dp).background(StudioTheme.colors.uiElementBorder)) {}
-
             Column(modifier = Modifier.fillMaxHeight().weight(1F)) {
-
                 fun onSelectVertex(vertex: VertexState?) {
                     selectedVertex = vertex
                     selectedVertexNetwork.clear()
@@ -325,24 +298,10 @@ fun WorkspaceScreen(
                         Spacer(Modifier.width(8.dp))
                         Text("Output", style = StudioTheme.typography.body2)
                         Spacer(Modifier.width(8.dp))
-
-//                        executionTabs.mapIndexed { index: Int, executionTab: ExecutionTabState ->
-//                            val selected = index == activeExecutionTabIndex
-//                            StudioTab(text = executionTab.title, selected = selected,
-//                                highlight = TabHighlight.BOTTOM, showCloseButton = true)
-//                        }
                     }
-
-//                    StudioIcon(Icon.Cog)
-//                    Spacer(Modifier.width(12.dp))
-
-                    // TODO: This should be a "maximise" icon allowing the Output panel to go full-screen
-//                    StudioIcon(Icon.Minus)
-//                    Spacer(Modifier.width(12.dp))
                 }
 
                 Row(modifier = Modifier.weight(1F)) {
-
                     val pixelDensity = LocalDensity.current.density
 
                     // TODO: this drag logic is too complex - should be extracted out into a VM (maybe TypeDBForceSimulation)
@@ -350,30 +309,13 @@ fun WorkspaceScreen(
                         vertex.xFixed = true
                         vertex.yFixed = true
 
-                        forceSimulation.chargeForce?.let {
-                            forceSimulation.removeForce(it)
-                            forceSimulation.chargeForce = null
-                        }
-                        forceSimulation.centerForce?.let {
-                            forceSimulation.removeForce(it)
-                            forceSimulation.centerForce = null
-                        }
-                        forceSimulation.xForce?.let {
-                            forceSimulation.removeForce(it)
-                            forceSimulation.xForce = null
-                        }
-                        forceSimulation.yForce?.let {
-                            forceSimulation.removeForce(it)
-                            forceSimulation.yForce = null
-                        }
-                        forceSimulation
-                            .alpha(0.25)
-                            .alphaDecay(0.0)
+                        forceSimulation.removeChargeForce()
+                        forceSimulation.removeCenterForce()
+                        forceSimulation.removeXForce()
+                        forceSimulation.removeYForce()
+                        forceSimulation.alpha(0.25).alphaDecay(0.0)
 
-                        forceSimulation.linkForce?.let {
-                            forceSimulation.removeForce(it)
-                            forceSimulation.linkForce = null
-                        }
+                        forceSimulation.removeLinkForce()
                         if (forceSimulation.data.edges.any { it.targetID == vertex.id && it.encoding == ROLEPLAYER }) {
                             val attributeEdges = forceSimulation.data.edges
                                 .filter { it.sourceID == vertex.id && it.encoding == HAS }
@@ -382,22 +324,16 @@ fun WorkspaceScreen(
                                 .filter { it.targetID == vertex.id && it.encoding == ROLEPLAYER }
                                 .map { it.sourceID }
                                 .flatMap { relationNodeID -> forceSimulation.data.edges
-                                    .filter { it.sourceID == relationNodeID && it.encoding == ROLEPLAYER } }
+                                    .filter { it.sourceID == relationNodeID && it.encoding == ROLEPLAYER }
+                                }
                             val relationNodes = roleplayerEdges.map { it.source }
                             val roleplayerNodes = roleplayerEdges.map { it.target }
                             val nodes = (attributeNodes + relationNodes + roleplayerNodes).toSet()
                             val links = attributeEdges + roleplayerEdges
-                            val nodesToFreeze = roleplayerNodes
-                                .filter { it != vertex && !it.isXFixed }
-                            nodesToFreeze.forEach {
-                                it.xFixed = true
-                                it.yFixed = true
-                            }
+                            val nodesToFreeze = roleplayerNodes.filter { it != vertex && !it.isXFixed }
+                            nodesToFreeze.forEach { it.freeze() }
                             temporarilyFrozenNodes += nodesToFreeze
-                            LinkForce(nodes, links, 90.0, 0.25).let {
-                                forceSimulation.linkForce = it
-                                forceSimulation.addForce(it)
-                            }
+                            forceSimulation.linkForce = forceSimulation.forces().addLinkForce(nodes, links, 90.0, 0.25)
                         }
                     }
 
@@ -409,15 +345,9 @@ fun WorkspaceScreen(
                     }
 
                     fun onVertexDragEnd() {
-                        forceSimulation.linkForce?.let {
-                            forceSimulation.removeForce(it)
-                            forceSimulation.linkForce = null
-                        }
+                        forceSimulation.removeLinkForce()
                         forceSimulation.alphaDecay(1 - forceSimulation.alphaMin().pow(1.0 / 300))
-                        temporarilyFrozenNodes.forEach {
-                            it.xFixed = false
-                            it.yFixed = false
-                        }
+                        temporarilyFrozenNodes.forEach { it.unfreeze() }
                         temporarilyFrozenNodes.clear()
                     }
 
@@ -425,28 +355,13 @@ fun WorkspaceScreen(
                         vertices = forceSimulation.data.vertices, edges = forceSimulation.data.edges,
                         hyperedges = forceSimulation.data.hyperedges,
                         vertexExplanations = forceSimulation.data.vertexExplanations, theme = visualiserTheme,
-                        /*metrics = SimulationMetrics(id = visualiserMetricsID, worldOffset = visualiserWorldOffset),*/
                         worldOffset = visualiserWorldOffset, onWorldOffsetChange = { visualiserWorldOffset += it },
                         scale = visualiserScale, onZoom = { value -> visualiserScale += value },
-                        explain = { vertex -> db.explainConcept(vertex.id) },
-                        selectedVertex = selectedVertex,
-                        onSelectVertex = ::onSelectVertex,
-                        selectedVertexNetwork = selectedVertexNetwork,
-                        onVertexDragStart = ::onVertexDragStart,
-                        onVertexDragMove = ::onVertexDragMove,
+                        explain = { vertex -> db.explainConcept(vertex.id) }, selectedVertex = selectedVertex,
+                        onSelectVertex = ::onSelectVertex, selectedVertexNetwork = selectedVertexNetwork,
+                        onVertexDragStart = ::onVertexDragStart, onVertexDragMove = ::onVertexDragMove,
                         onVertexDragEnd = ::onVertexDragEnd)
                 }
-
-//                Row(modifier = Modifier.fillMaxWidth().height(1.dp).background(StudioTheme.colors.uiElementBorder)) {}
-//
-//                StudioTabs(modifier = Modifier.fillMaxWidth().height(26.dp)) {
-//                    StudioTab("Log", selected = false, highlight = TabHighlight.TOP,
-//                        leadingIcon = { StudioIcon(Icon.HorizontalBarChartDesc) })
-//                    StudioTab("Graph", selected = true, highlight = TabHighlight.TOP,
-//                        leadingIcon = { StudioIcon(Icon.Graph) })
-//                    StudioTab("Table", selected = false, highlight = TabHighlight.TOP,
-//                        leadingIcon = { StudioIcon(Icon.Table) })
-//                }
 
                 Row(modifier = Modifier.fillMaxWidth().height(1.dp).background(StudioTheme.colors.uiElementBorder)) {}
             }
@@ -487,10 +402,6 @@ fun WorkspaceScreen(
                         .requiredWidth(IntrinsicSize.Max)
                         .rotate(90f))
                 }
-//                StudioTabs(orientation = TabOrientation.TOP_TO_BOTTOM) {
-//                    StudioTab("Settings", selected = showQuerySettingsPanel, leadingIcon = { StudioIcon(Icon.Cog) })
-//                    StudioTab("Concept", selected = showConceptPanel, leadingIcon = { StudioIcon(Icon.SearchAround) })
-//                }
                 Row(modifier = Modifier.weight(1f)) {}
                 Row(modifier = Modifier.fillMaxWidth().height(1.dp).background(StudioTheme.colors.uiElementBorder)) {}
             }

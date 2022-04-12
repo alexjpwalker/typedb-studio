@@ -26,8 +26,8 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
-import com.vaticle.force.graph.api.Link
-import com.vaticle.force.graph.api.Node
+import com.vaticle.force.graph.api.Edge
+import com.vaticle.force.graph.api.Vertex
 import com.vaticle.typedb.client.api.concept.Concept
 import com.vaticle.typedb.studio.data.EdgeData
 import com.vaticle.typedb.studio.data.EdgeEncoding
@@ -55,7 +55,7 @@ class GraphState {
 }
 
 data class VertexState(val concept: Concept, val id: Int, val encoding: VertexEncoding, val label: String, val shortLabel: String,
-                       val width: Float, val height: Float, val inferred: Boolean): com.vaticle.force.graph.api.Node {
+                       val width: Float, val height: Float, val inferred: Boolean): Vertex {
     var position: Offset by mutableStateOf(Offset(0F, 0F))
 
     val rect: Rect
@@ -93,6 +93,16 @@ data class VertexState(val concept: Concept, val id: Int, val encoding: VertexEn
     override fun vy(value: Double) {
         vy = value
     }
+
+    fun freeze() {
+        xFixed = true
+        yFixed = true
+    }
+
+    fun unfreeze() {
+        xFixed = false
+        yFixed = false
+    }
 }
 
 fun vertexStateOf(data: VertexData): VertexState {
@@ -101,15 +111,15 @@ fun vertexStateOf(data: VertexData): VertexState {
 
 data class EdgeState(val id: Int, val source: VertexState, val sourceID: Int = -1, val target: VertexState,
                      val targetID: Int = -1, val encoding: EdgeEncoding, val label: String,
-                     val inferred: Boolean): Link {
+                     val inferred: Boolean): Edge {
     var sourcePosition: Offset by mutableStateOf(Offset(0F, 0F))
     var targetPosition: Offset by mutableStateOf(Offset(0F, 0F))
 
-    override fun source(): Node {
+    override fun source(): Vertex {
         return source
     }
 
-    override fun target(): Node {
+    override fun target(): Vertex {
         return target
     }
 }

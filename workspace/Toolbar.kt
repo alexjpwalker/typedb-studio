@@ -36,26 +36,13 @@ import com.vaticle.typedb.studio.ui.elements.StudioDatabaseIcon
 import com.vaticle.typedb.studio.ui.elements.StudioIcon
 
 @Composable
-fun Toolbar(
-    modifier: Modifier = Modifier, dbName: String, allDBNames: List<String>, onDBNameChange: (value: String) -> Unit,
-    onOpen: () -> Unit, onSave: () -> Unit, onRun: () -> Unit, onLogout: () -> Unit) {
-
+fun Toolbar(modifier: Modifier = Modifier, dbName: String, onOpen: () -> Unit, onSave: () -> Unit, onRun: () -> Unit, onLogout: () -> Unit) {
     Row(modifier.height(28.dp), verticalAlignment = Alignment.CenterVertically) {
         Spacer(Modifier.width(8.dp))
         StudioDatabaseIcon()
         Spacer(Modifier.width(4.dp))
         Text(dbName, style = StudioTheme.typography.body2)
         Spacer(Modifier.width(8.dp))
-        // TODO: implement db switcher
-//        StudioDropdownBox(items = allDBNames, text = dbName, onTextChange = onDBNameChange, textStyle = StudioTheme.typography.body2,
-//            modifier = Modifier.size(width = 96.dp, height = 24.dp),
-//            leadingIcon = { StudioDatabaseIcon() })
-
-//        Spacer(Modifier.width(8.dp))
-//        StudioIcon(Icon.ChevronLeft, size = Size16Light)
-//
-//        Spacer(Modifier.width(8.dp))
-//        StudioIcon(Icon.ChevronRight, size = Size16Light)
 
         Spacer(Modifier.width(10.dp))
         StudioIcon(Icon.FolderOpen, size = Size14, modifier = Modifier.clickable { onOpen() })
@@ -66,13 +53,7 @@ fun Toolbar(
         Spacer(Modifier.width(10.dp))
         StudioIcon(Icon.Play, Color(0xFF499C54), size = Size18, modifier = Modifier.clickable { onRun() })
 
-//        Spacer(Modifier.width(8.dp))
-//        StudioIcon(Icon.Stop, Color(0xFFA1250C), size = Size18)
-
         Spacer(Modifier.weight(1F))
-
-//        StudioIcon(Icon.Cog)
-//        Spacer(Modifier.width(15.dp))
 
         StudioIcon(Icon.LogOut, modifier = Modifier.clickable { onLogout() })
         Spacer(Modifier.width(12.dp))
