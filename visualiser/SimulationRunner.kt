@@ -24,11 +24,11 @@ import com.vaticle.typedb.client.common.exception.TypeDBClientException
 import com.vaticle.typedb.common.collection.Either
 import com.vaticle.typedb.studio.data.GraphData
 import com.vaticle.typedb.studio.data.QueryResponseStream
-import com.vaticle.typedb.studio.data.VertexData
 import com.vaticle.typedb.studio.diagnostics.ErrorReporter
 import kotlinx.coroutines.CoroutineScope
 import mu.KotlinLogging.logger
 import java.util.concurrent.CompletionException
+import java.util.concurrent.Executors
 
 suspend fun runSimulation(
     simulation: TypeDBForceSimulation, dataStream: QueryResponseStream,
@@ -37,6 +37,8 @@ suspend fun runSimulation(
     val log = logger {}
     val errorReporter = ErrorReporter(log, snackbarHostState, snackbarCoroutineScope)
     val verticesByID: MutableMap<Int, VertexState> = mutableMapOf()
+    var isTickRunning = false
+    val executor = Executors.newSingleThreadExecutor()
 
     fun fetchNewData() {
         if (dataStream.isEmpty()) return
@@ -63,7 +65,7 @@ suspend fun runSimulation(
 
     while (true) {
         withFrameNanos {
-            if (!simulation.isStarted || System.nanoTime() - simulation.lastTickStartNanos < 1.667e7) /* 60 FPS */ {
+            if (!simulation.isStarted || isTickRunning || System.nanoTime() - simulation.lastTickStartNanos < 1.667e7) /* 60 FPS */ {
                 return@withFrameNanos
             }
             simulation.lastTickStartNanos = System.nanoTime()
@@ -71,7 +73,14 @@ suspend fun runSimulation(
             try {
                 if (System.nanoTime() - dataStream.lastFetchedNanos > 5e7 /* 50ms */) fetchNewData()
                 if (simulation.isEmpty() || simulation.alpha() < simulation.alphaMin()) return@withFrameNanos
-                simulation.tick()
+                isTickRunning = true
+                executor.submit {
+                    try {
+                        simulation.tick()
+                    } finally {
+                        isTickRunning = false
+                    }
+                }
             } catch (e: Exception) {
                 errorReporter.reportIDEError(e)
             }
