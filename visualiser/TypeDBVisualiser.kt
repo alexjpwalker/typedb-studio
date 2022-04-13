@@ -278,7 +278,7 @@ fun TypeDBVisualiser(
             val lineSource = edgeEndpoint(targetVertex.position, sourceVertex)
             val lineTarget = edgeEndpoint(sourceVertex.position, targetVertex)
             if (lineSource == null || lineTarget == null) return
-            val m: Offset = midpoint(edge.sourcePosition, edge.targetPosition)
+            val m: Offset = midpoint(edge.source.position, edge.target.position)
             // TODO: This Size is an approximation - a Compose equivalent of PixiJS TextMetrics would be more robust
             val labelRect = Rect(
                 Offset(m.x - edge.label.length * 4 - 2, m.y - 7 - 2),
@@ -354,7 +354,7 @@ fun TypeDBVisualiser(
     fun drawEdgeLabel(edge: EdgeState) {
         val viewportOffset: Offset = -worldOffset
         val m: Offset = when (val hyperedge = hyperedges.find { it.edgeID == edge.id }) {
-            null -> midpoint(edge.sourcePosition, edge.targetPosition) - viewportOffset
+            null -> midpoint(edge.source.position, edge.target.position) - viewportOffset
             else -> hyperedge.position - viewportOffset
         }
         val rect = Rect(Offset(m.x - edge.label.length * 4, m.y - 7), Size(edge.label.length * 8F, 14F))

@@ -112,9 +112,6 @@ fun vertexStateOf(data: VertexData): VertexState {
 data class EdgeState(val id: Int, val source: VertexState, val sourceID: Int = -1, val target: VertexState,
                      val targetID: Int = -1, val encoding: EdgeEncoding, val label: String,
                      val inferred: Boolean): Edge {
-    var sourcePosition: Offset by mutableStateOf(Offset(0F, 0F))
-    var targetPosition: Offset by mutableStateOf(Offset(0F, 0F))
-
     override fun source(): Vertex {
         return source
     }

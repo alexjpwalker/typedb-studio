@@ -77,6 +77,8 @@ suspend fun runSimulation(
                 executor.submit {
                     try {
                         simulation.tick()
+                    } catch (e: Exception) {
+                        errorReporter.reportIDEError(e)
                     } finally {
                         isTickRunning = false
                     }
