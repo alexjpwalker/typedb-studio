@@ -35,8 +35,9 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : BasicSimulati
     var lastTickStartNanos: Long = 0
     var isStarted = false
     private val nextHyperedgeNodeID = AtomicInteger(-1)
-    private val vertices: MutableCollection<VertexState> = mutableListOf()
-    val hyperedgeNodes: MutableMap<Int, Vertex> = mutableMapOf()
+    private val vertices: MutableList<VertexState> = mutableListOf()
+    val hyperedgeNodes: MutableList<Vertex> = mutableListOf()
+    val hyperedgeNodesByID: MutableMap<Int, Vertex> = mutableMapOf()
     var linkForce: LinkForce? = null
     var chargeForce: ManyBodyForce? = null
     var centerForce: CenterForce? = null
@@ -46,13 +47,13 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : BasicSimulati
     fun init() {
         clear()
         placeVertices(data.vertices as Collection<Vertex>)
-        val vertexCollection = vertices as Collection<Vertex>
-        centerForce = forces().addCenterForce(vertexCollection, 0.0, 0.0)
-        forces().addCollideForce(vertexCollection, 80.0)
-        chargeForce = forces().addManyBodyForce(vertexCollection, -100.0)
-        xForce = forces().addXForce(vertexCollection, 0.0, 0.05)
-        yForce = forces().addYForce(vertexCollection, 0.0, 0.05)
-        forces().addCollideForce(hyperedgeNodes.values as Collection<Vertex>, 40.0)
+        val vertexList = vertices as List<Vertex>
+        centerForce = forces().addCenterForce(vertexList, 0.0, 0.0)
+        forces().addCollideForce(vertexList, 80.0)
+        chargeForce = forces().addManyBodyForce(vertexList, -100.0)
+        xForce = forces().addXForce(vertexList, 0.0, 0.05)
+        yForce = forces().addYForce(vertexList, 0.0, 0.05)
+        forces().addCollideForce(hyperedgeNodes, 40.0)
         alpha(1.0)
         alphaTarget(0.0)
         alphaMin(0.01)
@@ -67,13 +68,8 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : BasicSimulati
 
     override fun tick() {
         super.tick()
-        val verticesByID: Map<Int, VertexState> = data.vertices.associateBy { it.id }
-        data.edges.forEach {
-            it.sourcePosition = verticesByID[it.sourceID]!!.position
-            it.targetPosition = verticesByID[it.targetID]!!.position
-        }
         data.hyperedges.forEach {
-            val hyperedgeNode = hyperedgeNodes[it.hyperedgeNodeID]
+            val hyperedgeNode = hyperedgeNodesByID[it.hyperedgeNodeID]
                 ?: throw IllegalStateException("Received bad simulation data: no hyperedge node found with ID ${it.hyperedgeNodeID}!")
             it.position = Offset(hyperedgeNode.x().toFloat(), hyperedgeNode.y().toFloat())
         }
@@ -103,7 +99,7 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : BasicSimulati
         linkForce?.let { existing -> forces().remove(existing) }
         linkForce = forces().addLinkForce(vertexCollection, edgeCollection, 90.0, 0.5)
         chargeForce?.let { existing -> forces().remove(existing) }
-        chargeForce = forces().addManyBodyForce(vertexCollection, -600.0 * data.edges.size / (data.vertices.size + 1))
+        chargeForce = forces().addManyBodyForce(vertexCollection, (-500.0 - data.vertices.size / 2) * data.edges.size / (data.vertices.size + 1))
 
         val edgesBySource = data.edges.groupBy { it.sourceID }
         edges.forEach { edge ->
@@ -136,18 +132,17 @@ class TypeDBForceSimulation(val data: GraphState = GraphState()) : BasicSimulati
     }
 
     private fun addEdgeBandMember(edge: EdgeState) {
-        if (edge.id !in hyperedgeNodes) {
-            val edgeMidpoint = edgeMidpoint(edge)
-            val hyperedgeNodeID = nextHyperedgeNodeID.getAndAdd(-1)
-            BasicVertex(edgeMidpoint.x, edgeMidpoint.y).let {
-                placeNode(it)
-                hyperedgeNodes[hyperedgeNodeID] = it
-                val placementOffset = RandomEffects.jiggle()
-                forces().addXForce(listOf(it), { edgeMidpoint(edge).x + placementOffset }, 0.35)
-                forces().addYForce(listOf(it), { edgeMidpoint(edge).y + placementOffset }, 0.35)
-            }
-            data.hyperedges += HyperedgeState(edge.id, hyperedgeNodeID)
+        val edgeMidpoint = edgeMidpoint(edge)
+        val hyperedgeNodeID = nextHyperedgeNodeID.getAndAdd(-1)
+        BasicVertex(edgeMidpoint.x, edgeMidpoint.y).let {
+            placeNode(it)
+            hyperedgeNodes += it
+            hyperedgeNodesByID[hyperedgeNodeID] = it
+            val placementOffset = RandomEffects.jiggle()
+            forces().addXForce(listOf(it), { edgeMidpoint(edge).x + placementOffset }, 0.35)
+            forces().addYForce(listOf(it), { edgeMidpoint(edge).y + placementOffset }, 0.35)
         }
+        data.hyperedges += HyperedgeState(edge.id, hyperedgeNodeID)
     }
 
     private fun edgeMidpoint(edge: EdgeState): Point {
