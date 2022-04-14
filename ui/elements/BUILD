@@ -29,6 +29,15 @@ kt_jvm_library(
 
         # Maven
         "@maven//:org_jetbrains_compose_desktop_desktop_jvm",
+        "@maven//:org_jetbrains_compose_foundation_foundation_desktop",
+        "@maven//:org_jetbrains_compose_foundation_foundation_layout_desktop",
+        "@maven//:org_jetbrains_compose_material_material_desktop",
+        "@maven//:org_jetbrains_compose_runtime_runtime_desktop",
+        "@maven//:org_jetbrains_compose_ui_ui_desktop",
+        "@maven//:org_jetbrains_compose_ui_ui_geometry_desktop",
+        "@maven//:org_jetbrains_compose_ui_ui_graphics_desktop",
+        "@maven//:org_jetbrains_compose_ui_ui_text_desktop",
+        "@maven//:org_jetbrains_compose_ui_ui_unit_desktop",
     ],
     tags = ["maven_coordinates=com.vaticle.typedb:studio-ui-elements:{pom_version}"],
 )
