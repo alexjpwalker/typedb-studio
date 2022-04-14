@@ -32,7 +32,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.awt.awtEvent
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
@@ -59,7 +58,7 @@ fun StudioButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifie
             .focusable(enabled = enabled)
             .clickable(enabled = enabled) { onClick() }
             .onKeyEvent { event: KeyEvent ->
-                if (event.awtEvent.id == KEY_RELEASED) return@onKeyEvent false
+                if (event.nativeKeyEvent.id == KEY_RELEASED) return@onKeyEvent false
                 if (!enabled) return@onKeyEvent false
                 when (event.key) {
                     Key.Tab -> {

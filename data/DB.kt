@@ -26,11 +26,11 @@ import com.vaticle.typedb.client.api.concept.Concept
 import com.vaticle.typedb.client.api.concept.thing.Relation
 import com.vaticle.typedb.client.api.concept.thing.Thing
 import com.vaticle.typedb.client.api.concept.type.ThingType
-import com.vaticle.typedb.client.api.TypeDBOptions
-import com.vaticle.typedb.client.api.TypeDBSession
-import com.vaticle.typedb.client.api.TypeDBSession.Type.DATA
-import com.vaticle.typedb.client.api.TypeDBTransaction
-import com.vaticle.typedb.client.api.TypeDBTransaction.Type.READ
+import com.vaticle.typedb.client.api.connection.TypeDBOptions
+import com.vaticle.typedb.client.api.connection.TypeDBSession
+import com.vaticle.typedb.client.api.connection.TypeDBSession.Type.DATA
+import com.vaticle.typedb.client.api.connection.TypeDBTransaction
+import com.vaticle.typedb.client.api.connection.TypeDBTransaction.Type.READ
 import com.vaticle.typedb.client.api.logic.Explanation
 import com.vaticle.typedb.client.common.exception.TypeDBClientException
 import com.vaticle.typedb.studio.data.EdgeDirection.*

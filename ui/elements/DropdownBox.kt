@@ -37,7 +37,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.awt.awtEvent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
@@ -45,7 +44,6 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.PointerIconDefaults
 import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -80,7 +78,7 @@ fun StudioDropdownBox(
                         focusRequester.requestFocus()
                     }
                     .onKeyEvent {
-                        if (it.awtEvent.id == java.awt.event.KeyEvent.KEY_RELEASED) return@onKeyEvent false
+                        if (it.nativeKeyEvent.id == java.awt.event.KeyEvent.KEY_RELEASED) return@onKeyEvent false
                         when (it.key) {
                             Key.Enter, Key.NumPadEnter -> {
                                 expanded = !expanded
@@ -95,7 +93,7 @@ fun StudioDropdownBox(
                     },
                 readOnly = true, textStyle = textStyle, leadingIcon = leadingIcon,
                 trailingIcon = { StudioIcon(Icon.CaretDown, size = Size16) },
-                pointerHoverIcon = PointerIconDefaults.Hand
+                pointerHoverIcon = PointerIcon.Hand /*PointerIconDefaults.Hand*/
             )
         }
 

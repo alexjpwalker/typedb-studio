@@ -33,7 +33,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.awt.awtEvent
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.Key
@@ -42,8 +41,7 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.PointerIconDefaults
-import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.pointerIcon
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
@@ -59,7 +57,7 @@ fun StudioTextField(
     variant: StudioTextFieldVariant = OUTLINED, singleLine: Boolean = true, maxLines: Int = 1, readOnly: Boolean = false,
     leadingIcon: (@Composable () -> Unit)? = null, trailingIcon: (@Composable () -> Unit)? = null,
     placeholderText: String = "", visualTransformation: VisualTransformation = VisualTransformation.None,
-    pointerHoverIcon: PointerIcon = PointerIconDefaults.Text,
+    pointerHoverIcon: PointerIcon = PointerIcon.Text /*PointerIconDefaults.Text*/, // TODO: #516
     textStyle: TextStyle
 ) {
     val focusManager = LocalFocusManager.current
@@ -73,9 +71,10 @@ fun StudioTextField(
 
     BasicTextField(
         modifier = basicTextFieldModifier
-            .pointerHoverIcon(pointerHoverIcon, overrideDescendants = true)
+            .pointerIcon(pointerHoverIcon)
+            /*.pointerHoverIcon(pointerHoverIcon, overrideDescendants = true)*/ // TODO: #516
             .onPreviewKeyEvent { event: KeyEvent ->
-                if (event.awtEvent.id == java.awt.event.KeyEvent.KEY_RELEASED) return@onPreviewKeyEvent true
+                if (event.nativeKeyEvent.id == java.awt.event.KeyEvent.KEY_RELEASED) return@onPreviewKeyEvent true
                 when (event.key) {
                     Key.Tab -> {
                         focusManager.moveFocus(if (event.isShiftPressed) FocusDirection.Up else FocusDirection.Down)

@@ -18,9 +18,10 @@
 
 package com.vaticle.typedb.studio.session
 
-import com.vaticle.typedb.client.api.TypeDBSession
+import com.vaticle.typedb.client.api.connection.TypeDBSession
 
 interface DBClient {
+
     val serverAddress: String
 
     fun listDatabases(): List<String>
