@@ -50,8 +50,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -187,6 +189,13 @@ fun TypeDBVisualiser(
         }
     }
 
+    fun edgeCoordinates(edge: EdgeState): Iterable<Offset> {
+        val viewportOffset: Offset = -worldOffset
+        val lineSource = verticesByID[edge.sourceID]!!.position
+        val lineTarget = verticesByID[edge.targetID]!!.position
+        return listOf((lineSource - viewportOffset) * pixelDensity, (lineTarget - viewportOffset) * pixelDensity)
+    }
+
     fun DrawScope.drawSolidEdge(edge: EdgeState) {
         val viewportOffset: Offset = -worldOffset
         val sourceVertex = verticesByID[edge.sourceID]
@@ -199,40 +208,40 @@ fun TypeDBVisualiser(
         val color = if (faded) baseColor.copy(alpha = 0.25f) else baseColor
 
         val hyperedge = hyperedges.find { it.edgeID == edge.id }
-        val arc = if (hyperedge == null) null else arcThroughPoints(lineSource, hyperedge.position, lineTarget)
+//        val arc = if (hyperedge == null) null else arcThroughPoints(lineSource, hyperedge.position, lineTarget)
 
-        when {
-            arc == null -> {
+//        when {
+//            arc == null -> {
                 drawLine(
                     start = (lineSource - viewportOffset) * pixelDensity,
                     end = (lineTarget - viewportOffset) * pixelDensity, color = color, strokeWidth = pixelDensity
                 )
-            }
-            abs(arc.sweepAngle) < 270 -> {
-                drawArc(
-                    color = color, startAngle = arc.startAngle, sweepAngle = arc.sweepAngle, useCenter = false,
-                    topLeft = (arc.topLeft - viewportOffset) * pixelDensity, size = arc.size * pixelDensity,
-                    style = Stroke(width = pixelDensity)
-                )
-            }
-            else -> {
-                drawLine(
-                    start = (lineSource - viewportOffset) * pixelDensity,
-                    end = (hyperedge!!.position - viewportOffset) * pixelDensity,
-                    color = color, strokeWidth = pixelDensity
-                )
-                drawLine(
-                    start = (hyperedge.position - viewportOffset) * pixelDensity,
-                    end = (lineTarget - viewportOffset) * pixelDensity, color = color, strokeWidth = pixelDensity
-                )
-            }
-        }
+//            }
+//            abs(arc.sweepAngle) < 270 -> {
+//                drawArc(
+//                    color = color, startAngle = arc.startAngle, sweepAngle = arc.sweepAngle, useCenter = false,
+//                    topLeft = (arc.topLeft - viewportOffset) * pixelDensity, size = arc.size * pixelDensity,
+//                    style = Stroke(width = pixelDensity)
+//                )
+//            }
+//            else -> {
+//                drawLine(
+//                    start = (lineSource - viewportOffset) * pixelDensity,
+//                    end = (hyperedge!!.position - viewportOffset) * pixelDensity,
+//                    color = color, strokeWidth = pixelDensity
+//                )
+//                drawLine(
+//                    start = (hyperedge.position - viewportOffset) * pixelDensity,
+//                    end = (lineTarget - viewportOffset) * pixelDensity, color = color, strokeWidth = pixelDensity
+//                )
+//            }
+//        }
 
-        val arrow = arrowhead(
-            from = (lineSource - viewportOffset) * pixelDensity, to = (lineTarget - viewportOffset) * pixelDensity,
-            arrowLength = 6F * pixelDensity, arrowWidth = 3F * pixelDensity
-        )
-        if (arrow != null) drawPath(path = arrow, color = color)
+//        val arrow = arrowhead(
+//            from = (lineSource - viewportOffset) * pixelDensity, to = (lineTarget - viewportOffset) * pixelDensity,
+//            arrowLength = 6F * pixelDensity, arrowWidth = 3F * pixelDensity
+//        )
+//        if (arrow != null) drawPath(path = arrow, color = color)
     }
 
     fun DrawScope.drawArrowSegment1(lineSource: Offset, labelRect: Rect, color: Color) {
@@ -382,8 +391,9 @@ fun TypeDBVisualiser(
         Box(modifier = Modifier.fillMaxSize().graphicsLayer(scaleX = scale, scaleY = scale)) {
             // TODO: don't render vertices or edges that are fully outside the viewport
             Canvas(modifier = Modifier.fillMaxSize()) {
-                if (edges.size <= 1000 && scale > 0.2) edges.forEach { drawEdgeSegments(it) }
-                else edges.forEach { drawSolidEdge(it) }
+//                drawPoints(points = edges.flatMap { edgeCoordinates(it) }, pointMode = PointMode.Lines, color = theme.edge)
+//                if (edges.size <= 1000 && scale > 0.2) edges.forEach { drawEdgeSegments(it) }
+//                else edges.forEach { drawSolidEdge(it) }
             }
 
             // TODO: this condition is supposed to be a || but without out-of-viewport detection the performance would degrade unacceptably
