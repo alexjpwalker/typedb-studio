@@ -48,14 +48,17 @@ kt_jvm_library(
         "@maven//:ch_qos_logback_logback_core",
         "@maven//:io_github_microutils_kotlin_logging_jvm",
         "@maven//:org_jetbrains_compose_desktop_desktop_jvm",
-        "@maven//:org_slf4j_slf4j_api",
-
-        # NOTE: These dependencies are not required to build the project, but IntelliJ needs them to offer autocompletion
         "@maven//:org_jetbrains_compose_foundation_foundation_desktop",
         "@maven//:org_jetbrains_compose_foundation_foundation_layout_desktop",
+        "@maven//:org_jetbrains_compose_material_material_desktop",
+        "@maven//:org_jetbrains_compose_runtime_runtime_desktop",
         "@maven//:org_jetbrains_compose_ui_ui_desktop",
         "@maven//:org_jetbrains_compose_ui_ui_geometry_desktop",
-        "@maven//:org_jetbrains_kotlinx_kotlinx_coroutines_core",
+        "@maven//:org_jetbrains_compose_ui_ui_graphics_desktop",
+        "@maven//:org_jetbrains_compose_ui_ui_text_desktop",
+        "@maven//:org_jetbrains_compose_ui_ui_unit_desktop",
+        "@maven//:org_jetbrains_kotlinx_kotlinx_coroutines_core_jvm",
+        "@maven//:org_slf4j_slf4j_api",
     ],
     resources = [
         "//resources/fonts:titillium-web",
@@ -71,7 +74,7 @@ java_binary(
     main_class = "com.vaticle.typedb.studio.StudioKt",
     runtime_deps = [
         ":studio",
-        "@maven//:org_jetbrains_skiko_skiko_jvm_runtime_macos_x64",
+        "@maven//:org_jetbrains_skiko_skiko_awt_runtime_macos_x64",
     ],
     classpath_resources = ["//resources:logback-test-xml"],
 )
@@ -81,7 +84,7 @@ java_binary(
     main_class = "com.vaticle.typedb.studio.StudioKt",
     runtime_deps = [
         ":studio",
-        "@maven//:org_jetbrains_skiko_skiko_jvm_runtime_windows_x64",
+        "@maven//:org_jetbrains_skiko_skiko_awt_runtime_windows_x64",
     ],
     classpath_resources = ["//resources:logback-test-xml"],
 )
@@ -91,7 +94,7 @@ java_binary(
     main_class = "com.vaticle.typedb.studio.StudioKt",
     runtime_deps = [
         ":studio",
-        "@maven//:org_jetbrains_skiko_skiko_jvm_runtime_linux_x64",
+        "@maven//:org_jetbrains_skiko_skiko_awt_runtime_linux_x64",
     ],
     classpath_resources = ["//resources:logback-test-xml"],
 )
@@ -223,7 +226,6 @@ filegroup(
     name = "ci",
     data = [
         "@vaticle_dependencies//tool/checkstyle:test-coverage",
-        "@vaticle_dependencies//tool/release:create-notes",
         "@vaticle_dependencies//tool/bazelrun:rbe",
     ],
 )

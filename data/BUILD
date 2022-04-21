@@ -38,6 +38,7 @@ kt_jvm_library(
 
         # Maven
         "@maven//:org_jetbrains_compose_desktop_desktop_jvm",
+        "@maven//:org_jetbrains_compose_runtime_runtime_desktop",
     ],
     tags = ["maven_coordinates=com.vaticle.typedb:studio-data:{pom_version}"],
 )
