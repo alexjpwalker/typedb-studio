@@ -40,6 +40,11 @@ kt_jvm_library(
 
         # Maven
         "@maven//:io_github_microutils_kotlin_logging_jvm",
+        "@maven//:org_gephi_graph_api",
+        "@maven//:org_gephi_graphstore",
+        "@maven//:org_gephi_layout_api",
+        "@maven//:org_gephi_layout_plugin",
+#        "@maven//:org_gephi_project_api",
         "@maven//:org_jetbrains_compose_desktop_desktop_jvm",
         "@maven//:org_jetbrains_compose_foundation_foundation_desktop",
         "@maven//:org_jetbrains_compose_foundation_foundation_layout_desktop",

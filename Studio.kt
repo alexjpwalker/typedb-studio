@@ -50,6 +50,11 @@ import com.vaticle.typedb.studio.storage.AppData
 import com.vaticle.typedb.studio.ui.elements.StudioSnackbarHost
 import com.vaticle.typedb.studio.workspace.WorkspaceScreen
 import mu.KotlinLogging.logger
+//import org.gephi.graph.api.GraphModel
+//import org.gephi.layout.plugin.force.StepDisplacement
+//import org.gephi.layout.plugin.force.yifanHu.YifanHuLayout
+//import org.gephi.layout.plugin.forceAtlas2.ForceAtlas2
+//import org.gephi.layout.plugin.forceAtlas2.ForceAtlas2Builder
 
 @Composable
 fun Studio(onCloseRequest: () -> Unit) {
@@ -92,4 +97,48 @@ fun main() {
         }
         Studio(::onCloseRequest)
     }
+
+//    val graphModel: GraphModel = GraphModel.Factory.newInstance()
+//    val builder = ForceAtlas2Builder()
+//    val layout = ForceAtlas2(builder)
+//    layout.setGraphModel(graphModel)
+//    println(Runtime.getRuntime().availableProcessors())
+//    println(layout.threadsCount)
+//    val layout = YifanHuLayout(null, StepDisplacement(1f)).apply {
+//        stepRatio = 0.99f
+//        optimalDistance = 200f
+//        barnesHutTheta = 1f
+//    }
+//
+//    for (i in 0..3) { graphModel.directedGraph.addNode(graphModel.factory().newNode("n$i").apply { label = "person$i" }) }
+//
+//    graphModel.directedGraph.addEdge(graphModel.factory().newEdge(graphModel.directedGraph.getNode("n0"), graphModel.directedGraph.getNode("n1"), 1, true))
+//    graphModel.directedGraph.addEdge(graphModel.factory().newEdge(graphModel.directedGraph.getNode("n0"), graphModel.directedGraph.getNode("n2"), 1, true))
+//    graphModel.directedGraph.addEdge(graphModel.factory().newEdge(graphModel.directedGraph.getNode("n1"), graphModel.directedGraph.getNode("n2"), 1, true))
+//
+//    layout.setGraphModel(graphModel)
+//
+//    layout.initAlgo()
+//    layout.resetPropertiesValues()
+//    layout.stepRatio = 0.99f
+//    layout.optimalDistance = 80f
+//    layout.barnesHutTheta = 1f
+//
+//    var i = 0
+//    while (i < 3000 && layout.canAlgo()) {
+//        if (i < 3) { graphModel.directedGraph.addNode(graphModel.factory().newNode("n$i").apply { label = "person$i" }) }
+//        if (i == 3) {
+//            graphModel.directedGraph.addEdge(graphModel.factory().newEdge(graphModel.directedGraph.getNode("n0"), graphModel.directedGraph.getNode("n1"), 1, true))
+//            graphModel.directedGraph.addEdge(graphModel.factory().newEdge(graphModel.directedGraph.getNode("n0"), graphModel.directedGraph.getNode("n2"), 1, true))
+//            graphModel.directedGraph.addEdge(graphModel.factory().newEdge(graphModel.directedGraph.getNode("n1"), graphModel.directedGraph.getNode("n2"), 1, true))
+//        }
+//        if (i == 0 || i == 3) {
+//            layout.initAlgo()
+//            layout.resetPropertiesValues()
+//            layout.optimalDistance = 80f
+//        }
+//        layout.goAlgo()
+//        println("iteration $i: " + graphModel.directedGraph.nodes.map { "{ label: ${it.label}, x: ${it.x()}, y: ${it.y()} }" })
+//        i++
+//    }
 }
