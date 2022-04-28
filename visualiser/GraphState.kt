@@ -18,11 +18,6 @@
 
 package com.vaticle.typedb.studio.visualiser
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -36,14 +31,14 @@ import com.vaticle.typedb.studio.data.VertexData
 import com.vaticle.typedb.studio.data.VertexEncoding
 
 class GraphState {
-    var vertices: SnapshotStateList<VertexState> = mutableStateListOf()
+    var vertices: MutableList<VertexState> = mutableListOf()
         private set
-    var edges: SnapshotStateList<EdgeState> = mutableStateListOf()
+    var edges: MutableList<EdgeState> = mutableListOf()
         private set
-    var hyperedges: SnapshotStateList<HyperedgeState> = mutableStateListOf()
+    var hyperedges: MutableList<HyperedgeState> = mutableListOf()
         private set
     // TODO: try changing this to a SnapshotStateMap
-    var vertexExplanations: SnapshotStateList<VertexExplanationState> = mutableStateListOf()
+    var vertexExplanations: MutableList<VertexExplanationState> = mutableListOf()
         private set
 
     fun clear() {
@@ -56,7 +51,7 @@ class GraphState {
 
 data class VertexState(val concept: Concept, val id: Int, val encoding: VertexEncoding, val label: String, val shortLabel: String,
                        val width: Float, val height: Float, val inferred: Boolean): Vertex {
-    var position: Offset by mutableStateOf(Offset(0F, 0F))
+    var position = Offset(0F, 0F)
 
     val rect: Rect
     get() = Rect(position - Offset(width, height) / 2F, Size(width, height))
@@ -126,7 +121,7 @@ fun edgeStateOf(data: EdgeData, source: VertexState, target: VertexState): EdgeS
 }
 
 data class HyperedgeState(val edgeID: Int, val hyperedgeNodeID: Int) {
-    var position: Offset by mutableStateOf(Offset(0F, 0F))
+    var position = Offset(0F, 0F)
 }
 
 data class VertexExplanationState(val vertexID: Int, val explanationID: Int)

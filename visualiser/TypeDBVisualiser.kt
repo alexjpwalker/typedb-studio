@@ -77,7 +77,7 @@ import kotlin.math.sqrt
 @Composable
 fun TypeDBVisualiser(
     modifier: Modifier, vertices: List<VertexState>, edges: List<EdgeState>, hyperedges: List<HyperedgeState>,
-    vertexExplanations: List<VertexExplanationState>, theme: VisualiserTheme, worldOffset: Offset,
+    frameID: Int, vertexExplanations: List<VertexExplanationState>, theme: VisualiserTheme, worldOffset: Offset,
     onWorldOffsetChange: (delta: Offset) -> Unit, scale: Float, onZoom: (delta: Float) -> Unit,
     selectedVertex: VertexState?, onSelectVertex: (vertex: VertexState?) -> Unit,
     selectedVertexNetwork: List<VertexState>, onVertexDragStart: (vertex: VertexState) -> Unit,

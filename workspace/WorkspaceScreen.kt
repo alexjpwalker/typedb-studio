@@ -53,6 +53,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
+import com.vaticle.force.graph.force.LinkForce
 import com.vaticle.typedb.client.common.exception.TypeDBClientException
 import com.vaticle.typedb.studio.appearance.StudioTheme
 import com.vaticle.typedb.studio.appearance.VisualiserTheme
@@ -93,7 +94,8 @@ fun WorkspaceScreen(routeData: WorkspaceRoute, visualiserTheme: VisualiserTheme,
     Column(Modifier.fillMaxSize()) {
         // TODO: combine these into meaningful groups of state objects
         var queryResponseStream: QueryResponseStream by remember { mutableStateOf(emptyQueryResponseStream()) }
-        val forceSimulation: TypeDBForceSimulation by remember { mutableStateOf(TypeDBForceSimulation()) }
+        val forceSimulation = remember { TypeDBForceSimulation() }
+        var visualiserFrameID by remember { mutableStateOf(0) }
         var visualiserWorldOffset by remember { mutableStateOf(Offset.Zero) }
         var visualiserSize by mutableStateOf(Size.Zero)
         var visualiserScale by remember { mutableStateOf(1F) }
@@ -207,6 +209,7 @@ fun WorkspaceScreen(routeData: WorkspaceRoute, visualiserTheme: VisualiserTheme,
             val query = activeQueryTab.query
             try {
                 forceSimulation.init()
+                visualiserFrameID = 0
                 queryResponseStream = db.matchQuery(query, querySettings.enableReasoning)
             } catch (e: Exception) {
                 errorReporter.reportIDEError(e)
@@ -319,21 +322,21 @@ fun WorkspaceScreen(routeData: WorkspaceRoute, visualiserTheme: VisualiserTheme,
                         if (forceSimulation.data.edges.any { it.targetID == vertex.id && it.encoding == ROLEPLAYER }) {
                             val attributeEdges = forceSimulation.data.edges
                                 .filter { it.sourceID == vertex.id && it.encoding == HAS }
-                            val attributeNodes = attributeEdges.map { it.target }
+                            val attributeVertices = attributeEdges.map { it.target }
                             val roleplayerEdges = forceSimulation.data.edges
                                 .filter { it.targetID == vertex.id && it.encoding == ROLEPLAYER }
                                 .map { it.sourceID }
                                 .flatMap { relationNodeID -> forceSimulation.data.edges
                                     .filter { it.sourceID == relationNodeID && it.encoding == ROLEPLAYER }
                                 }
-                            val relationNodes = roleplayerEdges.map { it.source }
-                            val roleplayerNodes = roleplayerEdges.map { it.target }
-                            val nodes = (attributeNodes + relationNodes + roleplayerNodes).toSet()
-                            val links = attributeEdges + roleplayerEdges
-                            val nodesToFreeze = roleplayerNodes.filter { it != vertex && !it.isXFixed }
+                            val relationVertices = roleplayerEdges.map { it.source }
+                            val roleplayerVertices = roleplayerEdges.map { it.target }
+                            val vertices = (attributeVertices + relationVertices + roleplayerVertices).toSet()
+                            val edges = attributeEdges + roleplayerEdges
+                            val nodesToFreeze = roleplayerVertices.filter { it != vertex && !it.isXFixed }
                             nodesToFreeze.forEach { it.freeze() }
                             temporarilyFrozenNodes += nodesToFreeze
-                            forceSimulation.linkForce = forceSimulation.forces().addLinkForce(nodes, links, 90.0, 0.25)
+                            forceSimulation.linkForce = forceSimulation.forces().add(LinkForce(vertices, edges, 90.0, 0.25))
                         }
                     }
 
@@ -353,7 +356,7 @@ fun WorkspaceScreen(routeData: WorkspaceRoute, visualiserTheme: VisualiserTheme,
 
                     TypeDBVisualiser(modifier = Modifier.fillMaxSize().onGloballyPositioned { visualiserSize = it.size.toSize() / pixelDensity },
                         vertices = forceSimulation.data.vertices, edges = forceSimulation.data.edges,
-                        hyperedges = forceSimulation.data.hyperedges,
+                        hyperedges = forceSimulation.data.hyperedges, frameID = visualiserFrameID,
                         vertexExplanations = forceSimulation.data.vertexExplanations, theme = visualiserTheme,
                         worldOffset = visualiserWorldOffset, onWorldOffsetChange = { visualiserWorldOffset += it },
                         scale = visualiserScale, onZoom = { value -> visualiserScale = (visualiserScale + value).coerceIn(0.001f, 10f) },
@@ -412,7 +415,7 @@ fun WorkspaceScreen(routeData: WorkspaceRoute, visualiserTheme: VisualiserTheme,
             queryStartTimeNanos = queryStartTimeNanos)
 
         LaunchedEffect(key1 = queryResponseStream) {
-            runSimulation(forceSimulation, queryResponseStream, snackbarHostState, snackbarCoroutineScope)
+            runSimulation(forceSimulation, queryResponseStream, { visualiserFrameID++ }, snackbarHostState, snackbarCoroutineScope)
         }
     }
 }
