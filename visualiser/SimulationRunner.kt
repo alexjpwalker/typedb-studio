@@ -31,7 +31,7 @@ import java.util.concurrent.CompletionException
 import java.util.concurrent.Executors
 
 suspend fun runSimulation(
-    simulation: TypeDBForceSimulation, dataStream: QueryResponseStream,
+    simulation: TypeDBForceSimulation, dataStream: QueryResponseStream, onTick: () -> Unit,
     snackbarHostState: SnackbarHostState, snackbarCoroutineScope: CoroutineScope
 ) {
     val log = logger {}
@@ -77,6 +77,7 @@ suspend fun runSimulation(
                 executor.submit {
                     try {
                         simulation.tick()
+                        onTick()
                     } catch (e: Exception) {
                         errorReporter.reportIDEError(e)
                     } finally {
