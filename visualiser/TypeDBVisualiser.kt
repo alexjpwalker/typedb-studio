@@ -391,7 +391,7 @@ fun TypeDBVisualiser(
         Box(modifier = Modifier.fillMaxSize().graphicsLayer(scaleX = scale, scaleY = scale)) {
             // TODO: don't render vertices or edges that are fully outside the viewport
             Canvas(modifier = Modifier.fillMaxSize()) {
-//                drawPoints(points = edges.flatMap { edgeCoordinates(it) }, pointMode = PointMode.Lines, color = theme.edge)
+                drawPoints(points = edges.flatMap { edgeCoordinates(it) }, pointMode = PointMode.Lines, color = theme.edge, strokeWidth = 1f)
 //                if (edges.size <= 1000 && scale > 0.2) edges.forEach { drawEdgeSegments(it) }
 //                else edges.forEach { drawSolidEdge(it) }
             }
