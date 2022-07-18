@@ -59,6 +59,18 @@ import kotlin.test.assertTrue
  * However, this is a source of non-determinism and a better and easier way may emerge.
  */
 class Quickstart {
+    companion object {
+        val DB_ADDRESS = "localhost:1729"
+        val DB_NAME = "github"
+
+        val CLOSE_TRANSACTION_STRING = Char(0xf00du).toString()
+        val ROLLBACK_STRING = Char(0xf2eau).toString()
+        val CHECK_STRING = Char(0xf00cu).toString()
+
+        val PLAY_STRING = Char(0xf04bu).toString()
+        val BOLT_STRING = Char(0xf0e7u).toString()
+    }
+
     @get:Rule
     val composeRule = createComposeRule()
 
@@ -177,17 +189,5 @@ class Quickstart {
             }
 
         }
-    }
-
-    companion object {
-        val DB_ADDRESS = "localhost:1729"
-        val DB_NAME = "github"
-
-        val CLOSE_TRANSACTION_STRING = Char(0xf00du).toString()
-        val ROLLBACK_STRING = Char(0xf2eau).toString()
-        val CHECK_STRING = Char(0xf00cu).toString()
-
-        val PLAY_STRING = Char(0xf04bu).toString()
-        val BOLT_STRING = Char(0xf0e7u).toString()
     }
 }

@@ -22,13 +22,9 @@
 
 package com.vaticle.typedb.studio.test
 
-import androidx.compose.ui.test.assertAll
-import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
 import com.vaticle.typedb.client.TypeDB
 import com.vaticle.typedb.client.api.TypeDBOptions
 import com.vaticle.typedb.client.api.TypeDBSession
@@ -36,6 +32,8 @@ import com.vaticle.typedb.client.api.TypeDBTransaction
 import com.vaticle.typedb.studio.Studio
 import com.vaticle.typedb.studio.framework.common.WindowContext
 import com.vaticle.typedb.studio.state.StudioState
+import com.vaticle.typedb.studio.state.project.FileState
+import com.vaticle.typedb.studio.state.project.PathState
 import com.vaticle.typeql.lang.TypeQL
 import com.vaticle.typeql.lang.query.TypeQLMatch
 import kotlinx.coroutines.delay
@@ -74,6 +72,16 @@ class ProjectBrowser {
 
             assertTrue(StudioState.client.isConnected)
 
+            composeRule.waitForIdle()
+
+            StudioState.project.tryOpenProject(File("./test/data").toPath())
+            StudioState.appData.project.path = File("./test/data").toPath()
+            composeRule.waitForIdle()
+
+            StudioState.project.dataDir!!.entries.first().asDirectory().entries.first().asFile().tryRename("renamed.tql")
+            composeRule.waitForIdle()
+            delay(500)
+            composeRule.onNodeWithText("renamed.tql").assertExists()
             composeRule.waitForIdle()
         }
     }

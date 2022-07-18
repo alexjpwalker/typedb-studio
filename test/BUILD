@@ -91,6 +91,7 @@ kt_jvm_test(
     srcs = [
         "ProjectBrowser.kt",
     ],
+    data = ["//test/data:query-string-files"],
     kotlin_compiler_plugin = "@org_jetbrains_compose_compiler//file",
     test_class = "com.vaticle.typedb.studio.test.ProjectBrowser",
     runtime_deps = skiko_runtime_platform,
@@ -103,6 +104,7 @@ kt_jvm_test(
         "//state/app",
         "//state/connection",
         "//state/project",
+        "//state/page",
         "@maven//:junit_junit",
         "@maven//:org_jetbrains_compose_foundation_foundation_desktop",
         "@maven//:org_jetbrains_compose_foundation_foundation_layout_desktop",
