@@ -16,7 +16,7 @@
  *
  */
 
-// We need to access private function Studio.MainWindow, this allows us to.
+// We need to access private function Studio.MainWindowColumn, this allows us to.
 // Do not use this outside of tests anywhere. It is extremely dangerous to do so.
 @file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
 
@@ -40,6 +40,7 @@ import com.vaticle.typeql.lang.TypeQL
 import com.vaticle.typeql.lang.query.TypeQLMatch
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
@@ -195,13 +196,4 @@ class Quickstart {
         val PLAY_STRING = Char(0xf04bu).toString()
         val BOLT_STRING = Char(0xf0e7u).toString()
     }
-}
-
-fun runComposeRule(compose: ComposeContentTestRule, rule: suspend ComposeContentTestRule.() -> Unit) {
-    runBlocking { compose.rule() }
-}
-
-fun fileNameToString(fileName: String): String {
-    return Files.readAllLines(Paths.get(fileName), StandardCharsets.UTF_8)
-        .joinToString("")
 }
