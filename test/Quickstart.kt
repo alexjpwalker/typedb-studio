@@ -24,7 +24,6 @@ package com.vaticle.typedb.studio.test
 
 import androidx.compose.ui.test.assertAll
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -39,14 +38,9 @@ import com.vaticle.typedb.studio.state.StudioState
 import com.vaticle.typeql.lang.TypeQL
 import com.vaticle.typeql.lang.query.TypeQLMatch
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Paths
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 

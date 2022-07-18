@@ -15,18 +15,23 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+load("@vaticle_dependencies//distribution:deployment.bzl", "deployment")
 load("@vaticle_dependencies//tool/checkstyle:rules.bzl", "checkstyle_test")
 load("@io_bazel_rules_kotlin//kotlin:kotlin.bzl", "kt_jvm_library", "kt_jvm_test")
 
 package(default_visibility = ["//:__pkg__"])
 
+skiko_runtime_platform = select({
+     "@vaticle_dependencies//util/platform:is_mac": ["@maven//:org_jetbrains_skiko_skiko_awt_runtime_macos_x64"],
+     "@vaticle_dependencies//util/platform:is_linux": ["@maven//:org_jetbrains_skiko_skiko_awt_runtime_windows_x64"],
+     "@vaticle_dependencies//util/platform:is_windows": ["@maven//:org_jetbrains_skiko_skiko_awt_runtime_linux_x64"],
+     "//conditions:default": ["INVALID"]})
+
 kt_jvm_library(
     name = "test-utils",
     srcs = ["TestUtils.kt"],
     kotlin_compiler_plugin = "@org_jetbrains_compose_compiler//file",
-    runtime_deps = ["@maven//:org_jetbrains_skiko_skiko_awt_runtime_macos_x64",
-                    "@maven//:org_jetbrains_skiko_skiko_awt_runtime_windows_x64",
-                    "@maven//:org_jetbrains_skiko_skiko_awt_runtime_linux_x64"],
+    runtime_deps = skiko_runtime_platform,
     deps = [
         # External Maven Dependencies
         "@maven//:junit_junit",
@@ -47,9 +52,7 @@ kt_jvm_test(
     data = ["//test/data:query-string-files"],
     kotlin_compiler_plugin = "@org_jetbrains_compose_compiler//file",
     test_class = "com.vaticle.typedb.studio.test.Quickstart",
-    runtime_deps = ["@maven//:org_jetbrains_skiko_skiko_awt_runtime_macos_x64",
-                    "@maven//:org_jetbrains_skiko_skiko_awt_runtime_windows_x64",
-                    "@maven//:org_jetbrains_skiko_skiko_awt_runtime_linux_x64"],
+    runtime_deps = skiko_runtime_platform,
     deps = [
         "test-utils",
 
@@ -90,9 +93,7 @@ kt_jvm_test(
     ],
     kotlin_compiler_plugin = "@org_jetbrains_compose_compiler//file",
     test_class = "com.vaticle.typedb.studio.test.ProjectBrowser",
-    runtime_deps = ["@maven//:org_jetbrains_skiko_skiko_awt_runtime_macos_x64",
-                    "@maven//:org_jetbrains_skiko_skiko_awt_runtime_windows_x64",
-                    "@maven//:org_jetbrains_skiko_skiko_awt_runtime_linux_x64"],
+    runtime_deps = skiko_runtime_platform,
     deps = [
         "test-utils",
 
