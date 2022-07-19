@@ -78,7 +78,10 @@ class ProjectBrowser {
             StudioState.appData.project.path = File("./test/data").toPath()
             composeRule.waitForIdle()
 
-            StudioState.project.dataDir!!.entries.first().asDirectory().entries.first().asFile().tryRename("renamed.tql")
+
+
+            StudioState.project.current!!.directory.entries[1].asFile().tryRename("renamed.tql")
+
             composeRule.waitForIdle()
             delay(500)
             composeRule.onNodeWithText("renamed.tql").assertExists()
