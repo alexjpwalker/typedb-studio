@@ -18,6 +18,7 @@
 
 package com.vaticle.typedb.studio.framework.graph
 
+import androidx.compose.ui.geometry.Offset
 import com.vaticle.typedb.client.api.TypeDBTransaction
 import com.vaticle.typedb.client.api.answer.ConceptMap
 import com.vaticle.typedb.client.api.answer.ConceptMap.Explainables
@@ -77,7 +78,10 @@ class GraphBuilder(
         conceptMap.map().entries.forEach { (varName: String, concept: Concept) ->
             when {
                 concept is Thing -> {
-                    val (added, vertex) = putVertexIfAbsent(concept)
+                    val (added, vertex) = when (answerSource) {
+                        is AnswerSource.Query -> putVertexIfAbsent(concept)
+                        is AnswerSource.Explanation -> putVertexAtPositionIfAbsent(concept, answerSource.position)
+                    }
                     verticesByVarName[varName] = vertex
                     if (added) {
                         vertex as Vertex.Thing
@@ -119,6 +123,10 @@ class GraphBuilder(
         ) { Vertex.Type.of(concept, graph) }
         else -> throw unsupportedEncodingException(concept)
     }
+
+    private fun putVertexAtPositionIfAbsent(thing: Thing, position: Offset): PutVertexResult = putVertexIfAbsent(
+        thing.iid, thing, newThingVertices, allThingVertices
+    ) { Vertex.Thing.of(thing, graph, position) }
 
     private fun <VERTEX : Vertex> putVertexIfAbsent(
         key: String, concept: Concept, newRecords: MutableMap<String, VERTEX>, allRecords: MutableMap<String, VERTEX>,
@@ -327,7 +335,7 @@ class GraphBuilder(
         if (iterator.hasNext()) {
             val explanation = iterator.next()
             vertexExplanations += vertex to explanation
-            loadConceptMap(explanation.condition(), AnswerSource.Explanation(explanation))
+            loadConceptMap(explanation.condition(), AnswerSource.Explanation(explanation, vertex.geometry.position))
         } else Service.notification.info(LOGGER, FULLY_EXPLAINED)
     }
 
@@ -335,7 +343,7 @@ class GraphBuilder(
         if (iterator.hasNext()) {
             val explanation = iterator.next()
             hasEdgeExplanations += Pair(edge.source, edge.target) to explanation
-            loadConceptMap(explanation.condition(), AnswerSource.Explanation(explanation))
+            loadConceptMap(explanation.condition(), AnswerSource.Explanation(explanation, edge.geometry.labelPosition))
         } else Service.notification.info(LOGGER, FULLY_EXPLAINED)
     }
 
@@ -345,7 +353,7 @@ class GraphBuilder(
 
     sealed class AnswerSource {
         object Query : AnswerSource()
-        class Explanation(val explanation: com.vaticle.typedb.client.api.logic.Explanation) : AnswerSource()
+        class Explanation(val explanation: com.vaticle.typedb.client.api.logic.Explanation, val position: Offset) : AnswerSource()
     }
 
     sealed class ThingEdgeCandidate {

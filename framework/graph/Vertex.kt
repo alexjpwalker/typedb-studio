@@ -57,11 +57,11 @@ sealed class Vertex(val concept: Concept, protected val graph: Graph) {
         override val label = thing.type.label.name()
 
         companion object {
-            fun of(thing: com.vaticle.typedb.client.api.concept.thing.Thing, graph: Graph): Thing {
+            fun of(thing: com.vaticle.typedb.client.api.concept.thing.Thing, graph: Graph, initialPosition: Offset = Offset.Zero): Thing {
                 return when (thing) {
-                    is com.vaticle.typedb.client.api.concept.thing.Entity -> Entity(thing, graph)
-                    is com.vaticle.typedb.client.api.concept.thing.Relation -> Relation(thing, graph)
-                    is com.vaticle.typedb.client.api.concept.thing.Attribute<*> -> Attribute(thing, graph)
+                    is com.vaticle.typedb.client.api.concept.thing.Entity -> Entity(thing, graph, initialPosition)
+                    is com.vaticle.typedb.client.api.concept.thing.Relation -> Relation(thing, graph, initialPosition)
+                    is com.vaticle.typedb.client.api.concept.thing.Attribute<*> -> Attribute(thing, graph, initialPosition)
                     else -> throw IllegalStateException("[$thing]'s encoding is not supported by Vertex.Thing")
                 }
             }
@@ -79,27 +79,27 @@ sealed class Vertex(val concept: Concept, protected val graph: Graph) {
             return graph.edges.filterIsInstance<Edge.Roleplayer>().filter { it.target == this }
         }
 
-        class Entity(val entity: com.vaticle.typedb.client.api.concept.thing.Entity, graph: Graph) :
+        class Entity(val entity: com.vaticle.typedb.client.api.concept.thing.Entity, graph: Graph, initialPosition: Offset = Offset.Zero) :
             Thing(entity, graph) {
-            override val geometry = Geometry.Entity()
+            override val geometry = Geometry.Entity(initialPosition)
         }
 
-        class Relation(relation: com.vaticle.typedb.client.api.concept.thing.Relation, graph: Graph) :
+        class Relation(relation: com.vaticle.typedb.client.api.concept.thing.Relation, graph: Graph, initialPosition: Offset = Offset.Zero) :
             Thing(relation, graph) {
 
             override val label = relation.type.label.name()
-            override val geometry = Geometry.Relation()
+            override val geometry = Geometry.Relation(initialPosition)
 
             fun roleplayerEdges(): Collection<Edge.Roleplayer> {
                 return graph.edges.filterIsInstance<Edge.Roleplayer>().filter { it.source == this }
             }
         }
 
-        class Attribute(val attribute: com.vaticle.typedb.client.api.concept.thing.Attribute<*>, graph: Graph) :
+        class Attribute(val attribute: com.vaticle.typedb.client.api.concept.thing.Attribute<*>, graph: Graph, initialPosition: Offset = Offset.Zero) :
             Thing(attribute, graph) {
 
             override val label = "${attribute.type.label.name()}: ${attributeValue(attribute)}"
-            override val geometry = Geometry.Attribute()
+            override val geometry = Geometry.Attribute(initialPosition)
         }
     }
 
@@ -139,7 +139,8 @@ sealed class Vertex(val concept: Concept, protected val graph: Graph) {
         }
     }
 
-    sealed class Geometry(private val baseSize: Size, private val expandedMaxSize: Size) : BasicVertex(0.0, 0.0) {
+    sealed class Geometry(private val baseSize: Size, private val expandedMaxSize: Size, initialPosition: Offset = Offset.Zero)
+        : BasicVertex(initialPosition.x.toDouble(),  initialPosition.y.toDouble()) {
 
         private val baseScale = 1f
         private val expandedSize get() = if (contentOverflowsBaseShape) expandedMaxSize else baseSize
@@ -216,7 +217,7 @@ sealed class Vertex(val concept: Concept, protected val graph: Graph) {
             }
         }
 
-        class Entity : Geometry(ENTITY_SIZE, CONCEPT_SIZE_EXPANDED) {
+        class Entity(initialPosition: Offset = Offset.Zero) : Geometry(ENTITY_SIZE, CONCEPT_SIZE_EXPANDED, initialPosition) {
 
             private val incomingEdgeTargetRect
                 get() = Rect(
@@ -239,7 +240,7 @@ sealed class Vertex(val concept: Concept, protected val graph: Graph) {
             }
         }
 
-        class Relation : Geometry(RELATION_SIZE, CONCEPT_SIZE_EXPANDED) {
+        class Relation(initialPosition: Offset = Offset.Zero) : Geometry(RELATION_SIZE, CONCEPT_SIZE_EXPANDED, initialPosition) {
 
             private val incomingEdgeTargetRect
                 get() = Rect(Offset(rect.left - 4, rect.top - 4), Size(rect.width + 8, rect.height + 8))
@@ -275,7 +276,7 @@ sealed class Vertex(val concept: Concept, protected val graph: Graph) {
             }
         }
 
-        class Attribute : Geometry(ATTRIBUTE_SIZE, ATTRIBUTE_SIZE_EXPANDED) {
+        class Attribute(initialPosition: Offset = Offset.Zero) : Geometry(ATTRIBUTE_SIZE, ATTRIBUTE_SIZE_EXPANDED, initialPosition) {
 
             private val drawAsRect get() = !isVisiblyCollapsed && contentOverflowsBaseShape
 
