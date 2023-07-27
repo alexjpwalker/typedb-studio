@@ -20,8 +20,8 @@ package com.vaticle.typedb.studio.framework.graph
 
 import com.vaticle.typedb.client.api.TypeDBTransaction
 import com.vaticle.typedb.client.api.answer.ConceptMap
+import com.vaticle.typedb.client.api.answer.ConceptMap.Explainables
 import com.vaticle.typedb.client.api.concept.Concept
-import com.vaticle.typedb.client.api.concept.thing.Attribute
 import com.vaticle.typedb.client.api.concept.thing.Relation
 import com.vaticle.typedb.client.api.concept.thing.Thing
 import com.vaticle.typedb.client.api.concept.type.RoleType
@@ -54,8 +54,10 @@ class GraphBuilder(
     private val allTypeVertices = ConcurrentHashMap<String, Vertex.Type>()
     private val edges = ConcurrentLinkedQueue<Edge>()
     private val thingEdgeCandidates = ConcurrentHashMap<String, Collection<ThingEdgeCandidate>>()
-    private val explainables = ConcurrentHashMap<Vertex.Thing, ConceptMap.Explainable>()
+    private val vertexExplainables = ConcurrentHashMap<Vertex.Thing, ConceptMap.Explainable>()
     private val vertexExplanations = ConcurrentLinkedQueue<Pair<Vertex.Thing, Explanation>>()
+    private val hasEdgeExplainables = ConcurrentHashMap<Pair<Vertex.Thing, Vertex.Thing.Attribute>, ConceptMap.Explainable>()
+    private val hasEdgeExplanations = ConcurrentLinkedQueue<Pair<Edge.Has, Explanation>>()
     private val lock = ReentrantReadWriteLock(true)
     private val transactionID = transactionState.transaction?.hashCode()
     private val snapshotEnabled = transactionState.snapshot.value
@@ -71,14 +73,16 @@ class GraphBuilder(
     }
 
     fun loadConceptMap(conceptMap: ConceptMap, answerSource: AnswerSource = AnswerSource.Query) {
+        val verticesByVarName = mutableMapOf<String, Vertex>()
         conceptMap.map().entries.forEach { (varName: String, concept: Concept) ->
             when {
                 concept is Thing -> {
                     val (added, vertex) = putVertexIfAbsent(concept)
+                    verticesByVarName[varName] = vertex
                     if (added) {
                         vertex as Vertex.Thing
                         if (transactionState.transaction?.options()?.explain()?.get() == true && concept.isInferred) {
-                            addExplainables(concept, vertex, conceptMap.explainables(), varName)
+                            addVertexExplainables(vertex, conceptMap.explainables(), varName)
                         }
                         if (answerSource is AnswerSource.Explanation) {
                             vertexExplanations += Pair(vertex, answerSource.explanation)
@@ -88,12 +92,21 @@ class GraphBuilder(
                 concept is ThingType && concept.isRoot -> { /* skip root thing types */
                 }
                 concept is ThingType -> {
-                    putVertexIfAbsent(concept)
+                    verticesByVarName[varName] = putVertexIfAbsent(concept).vertex
                 }
                 concept is RoleType -> { /* skip role types */
                 }
                 else -> throw unsupportedEncodingException(concept)
             }
+        }
+        conceptMap.explainables().ownerships().entries.forEach { (varNames, explainable) ->
+            val (ownerVarName, attributeVarName) = varNames.first() to varNames.second()
+            val (ownerVertex, attributeVertex) = verticesByVarName.getValue(ownerVarName) to verticesByVarName.getValue(
+                attributeVarName
+            )
+            if (ownerVertex !is Vertex.Thing) throw IllegalStateException("In an explainable ownership, the owner was not a Thing")
+            if (attributeVertex !is Vertex.Thing.Attribute) throw IllegalStateException("In an explainable ownership, the attribute was not an Attribute")
+            addHasEdgeExplainable(ownerVertex, attributeVertex, explainable)
         }
     }
 
@@ -206,14 +219,12 @@ class GraphBuilder(
     }
 
 
-    private fun addExplainables(
-        thing: Thing, thingVertex: Vertex.Thing, explainables: ConceptMap.Explainables, varName: String
-    ) {
+    private fun addVertexExplainables(thingVertex: Vertex.Thing, explainables: Explainables, varName: String) {
         try {
-            this.explainables.computeIfAbsent(thingVertex) {
-                when (thing) {
-                    is Relation -> explainables.relation(varName)
-                    is Attribute<*> -> explainables.attribute(varName)
+            this.vertexExplainables.computeIfAbsent(thingVertex) {
+                when (thingVertex) {
+                    is Vertex.Thing.Relation -> explainables.relation(varName)
+                    is Vertex.Thing.Attribute -> explainables.attribute(varName)
                     else -> throw IllegalStateException("Inferred Thing was neither a Relation nor an Attribute")
                 }
             }
@@ -222,6 +233,10 @@ class GraphBuilder(
             //       Explainable. Once that bug is fixed, remove this catch statement.
             /* do nothing */
         }
+    }
+
+    private fun addHasEdgeExplainable(ownerVertex: Vertex.Thing, attributeVertex: Vertex.Thing.Attribute, explainable: ConceptMap.Explainable) {
+        this.hasEdgeExplainables.putIfAbsent(Pair(ownerVertex, attributeVertex), explainable)
     }
 
     fun dumpTo(graph: Graph) {
@@ -261,8 +276,10 @@ class GraphBuilder(
     }
 
     private fun dumpExplainablesTo(graph: Graph) {
-        explainables.forEach { graph.reasoning.explainables.putIfAbsent(it.key, it.value) }
-        explainables.clear()
+        vertexExplainables.forEach { graph.reasoning.vertexExplainables.putIfAbsent(it.key, it.value) }
+        vertexExplainables.clear()
+        hasEdgeExplainables.forEach { graph.reasoning.hasEdgeExplainables.putIfAbsent(it.key, it.value) }
+        hasEdgeExplainables.clear()
     }
 
     private fun dumpExplanationStructureTo(graph: Graph) {
@@ -270,29 +287,54 @@ class GraphBuilder(
         vertexExplanations.clear()
     }
 
-    fun tryExplain(vertex: Vertex.Thing) {
+    fun tryExplainThing(vertex: Vertex.Thing) {
         val canExplain = transactionSnapshot?.options()?.explain()?.get() ?: false
         if (!canExplain) {
             Service.notification.userWarning(LOGGER, EXPLAIN_NOT_ENABLED)
         } else {
             NotificationService.launchCompletableFuture(Service.notification, LOGGER) {
-                val iterator = graph.reasoning.explanationIterators[vertex]
-                    ?: runExplainQuery(vertex).also { graph.reasoning.explanationIterators[vertex] = it }
-                fetchNextExplanation(vertex, iterator)
+                val iterator = graph.reasoning.vertexExplanationIterators[vertex]
+                    ?: runExplainQueryForVertex(vertex).also { graph.reasoning.vertexExplanationIterators[vertex] = it }
+                fetchNextVertexExplanation(vertex, iterator)
             }.exceptionally { e -> Service.notification.systemError(LOGGER, e, UNEXPECTED_ERROR) }
         }
     }
 
-    private fun runExplainQuery(vertex: Vertex.Thing): Iterator<Explanation> {
-        val explainable = graph.reasoning.explainables[vertex] ?: throw IllegalStateException("Not explainable")
-        return transactionSnapshot?.query()?.explain(explainable)?.iterator()
-            ?: Collections.emptyIterator()
+    fun tryExplainOwnership(edge: Edge.Has) {
+        val canExplain = transactionSnapshot?.options()?.explain()?.get() ?: false
+        if (!canExplain) {
+            Service.notification.userWarning(LOGGER, EXPLAIN_NOT_ENABLED)
+        } else {
+            NotificationService.launchCompletableFuture(Service.notification, LOGGER) {
+                val iterator = graph.reasoning.hasEdgeExplanationIterators[edge]
+                    ?: runExplainQueryForHasEdge(edge).also { graph.reasoning.hasEdgeExplanationIterators[edge] = it }
+                fetchNextHasEdgeExplanation(edge, iterator)
+            }.exceptionally { e -> Service.notification.systemError(LOGGER, e, UNEXPECTED_ERROR) }
+        }
     }
 
-    private fun fetchNextExplanation(vertex: Vertex.Thing, iterator: Iterator<Explanation>) {
+    private fun runExplainQueryForVertex(vertex: Vertex.Thing): Iterator<Explanation> {
+        val explainable = graph.reasoning.vertexExplainables[vertex] ?: throw IllegalStateException("Not explainable")
+        return transactionSnapshot?.query()?.explain(explainable)?.iterator() ?: Collections.emptyIterator()
+    }
+
+    private fun runExplainQueryForHasEdge(edge: Edge.Has): Iterator<Explanation> {
+        val explainable = graph.reasoning.hasEdgeExplainables[Pair(edge.source, edge.target)] ?: throw IllegalStateException("Not explainable")
+        return transactionSnapshot?.query()?.explain(explainable)?.iterator() ?: Collections.emptyIterator()
+    }
+
+    private fun fetchNextVertexExplanation(vertex: Vertex.Thing, iterator: Iterator<Explanation>) {
         if (iterator.hasNext()) {
             val explanation = iterator.next()
-            vertexExplanations += Pair(vertex, explanation)
+            vertexExplanations += vertex to explanation
+            loadConceptMap(explanation.condition(), AnswerSource.Explanation(explanation))
+        } else Service.notification.info(LOGGER, FULLY_EXPLAINED)
+    }
+
+    private fun fetchNextHasEdgeExplanation(edge: Edge.Has, iterator: Iterator<Explanation>) {
+        if (iterator.hasNext()) {
+            val explanation = iterator.next()
+            hasEdgeExplanations += edge to explanation
             loadConceptMap(explanation.condition(), AnswerSource.Explanation(explanation))
         } else Service.notification.info(LOGGER, FULLY_EXPLAINED)
     }
@@ -377,10 +419,11 @@ class GraphBuilder(
                 graphBuilder.apply {
                     remoteThing?.has?.forEach {
                         val attributeVertex = graphBuilder.allThingVertices[it.iid] as? Vertex.Thing.Attribute
+                        val ownershipIsInferred = it.isInferred
                         if (attributeVertex != null) {
-                            addEdge(Edge.Has(thingVertex, attributeVertex, it.isInferred))
+                            addEdge(Edge.Has(thingVertex, attributeVertex, ownershipIsInferred))
                         } else {
-                            addThingEdgeCandidate(ThingEdgeCandidate.Has(thingVertex, it.iid, it.isInferred))
+                            addThingEdgeCandidate(ThingEdgeCandidate.Has(thingVertex, it.iid, ownershipIsInferred))
                         }
                     }
                 }
@@ -412,6 +455,14 @@ class GraphBuilder(
                         }
                     }
                 }
+            }
+
+            private fun attributeIsExplainable(attributeVarName: String, conceptMap: ConceptMap): Boolean {
+                return attributeVarName in conceptMap.explainables().attributes().keys
+            }
+
+            private fun ownershipIsExplainable(attributeVarName: String, conceptMap: ConceptMap): Boolean {
+                return attributeVarName in conceptMap.explainables().ownerships().keys.map { it.second() }
             }
         }
     }

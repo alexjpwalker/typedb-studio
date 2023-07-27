@@ -48,10 +48,11 @@ object Typography {
         }
     }
 
-    private val MONACO = "resources/fonts/monaco/Monaco.ttf"
-    private val TITILLIUM_WEB_REGULAR = "resources/fonts/titilliumweb/TitilliumWeb-Regular.ttf"
-    private val TITILLIUM_WEB_SEMI_BOLD = "resources/fonts/titilliumweb/TitilliumWeb-SemiBold.ttf"
-    private val UBUNTU_MONO_REGULAR = "resources/fonts/ubuntumono/UbuntuMono-Regular.ttf"
+    private const val MONACO = "resources/fonts/monaco/Monaco.ttf"
+    private const val TITILLIUM_WEB_REGULAR = "resources/fonts/titilliumweb/TitilliumWeb-Regular.ttf"
+    private const val TITILLIUM_WEB_SEMI_BOLD = "resources/fonts/titilliumweb/TitilliumWeb-SemiBold.ttf"
+    private const val UBUNTU_MONO_REGULAR = "resources/fonts/ubuntumono/UbuntuMono-Regular.ttf"
+    private const val UBUNTU_MONO_BOLD = "resources/fonts/ubuntumono/UbuntuMono-Bold.ttf"
     private const val DEFAULT_BODY_FONT_SIZE_MEDIUM = 13
     private const val DEFAULT_BODY_FONT_SIZE_SMALL = 12
     private const val DEFAULT_CODE_FONT_SIZE_MEDIUM = 14
@@ -60,7 +61,7 @@ object Typography {
     @Stable
     class Theme constructor(
         variableWidthFontFamily: FontFamily, fixedWidthFontFamily: FontFamily,
-        val fixedWidthSkiaTypeface: Typeface,
+        val fixedWidthSkiaTypeface: Typeface, val fixedWidthBoldSkiaTypeface: Typeface,
         bodySizeMedium: Int, bodySizeSmall: Int, val codeSizeMedium: Int, codeSizeSmall: Int,
     ) {
         val body1 = TextStyle(fontSize = bodySizeMedium.sp, fontFamily = variableWidthFontFamily)
@@ -80,12 +81,16 @@ object Typography {
             ClassLoader.getSystemClassLoader().getResourceAsStream(UBUNTU_MONO_REGULAR)!!.use { it.readAllBytes() }
         )
     )
+    private val UBUNTU_MONO_BOLD_SKIA_TYPEFACE = Typeface.makeFromData(
+        Data.makeFromBytes(ClassLoader.getSystemClassLoader().getResourceAsStream(UBUNTU_MONO_BOLD)!!.use { it.readAllBytes() })
+    )
 
     object Themes {
         val DEFAULT = Theme(
             variableWidthFontFamily = TITILLIUM_WEB_FAMILY,
             fixedWidthFontFamily = UBUNTU_MONO_FAMILY,
             fixedWidthSkiaTypeface = UBUNTU_MONO_SKIA_TYPEFACE,
+            fixedWidthBoldSkiaTypeface = UBUNTU_MONO_BOLD_SKIA_TYPEFACE,
             bodySizeMedium = DEFAULT_BODY_FONT_SIZE_MEDIUM,
             bodySizeSmall = DEFAULT_BODY_FONT_SIZE_SMALL,
             codeSizeMedium = DEFAULT_CODE_FONT_SIZE_MEDIUM,

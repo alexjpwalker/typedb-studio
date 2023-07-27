@@ -90,10 +90,13 @@ sealed class Edge(open val source: Vertex, open val target: Vertex) {
             }
 
         fun labelRect(dpSize: DpSize, density: Float): Rect {
-            val labelCenter = curveMidpoint ?: midpoint
             val size = Size(dpSize.width.value * density, dpSize.height.value * density)
-            return Rect(Offset(labelCenter.x - size.width / 2, labelCenter.y - size.height / 2), size)
+            return Rect(Offset(labelPosition.x - size.width / 2, labelPosition.y - size.height / 2), size)
         }
+
+        val labelPosition get() = curveMidpoint ?: midpoint
+
+        fun labelVisuallyIntersects(point: Offset, labelSize: DpSize, density: Float) = labelRect(labelSize, density).contains(point)
 
         override fun source() = edge.source.geometry
         override fun target() = edge.target.geometry

@@ -55,6 +55,7 @@ class Graph(private val interactions: Interactions) {
 
     val physics = Physics(this, interactions)
     val reasoning = Reasoning()
+    val area get() = interactions.graphArea
 
     fun putThingVertex(iid: String, vertex: Vertex.Thing) {
         putVertex(iid, _thingVertices, vertex)
@@ -262,8 +263,10 @@ class Graph(private val interactions: Interactions) {
 
     class Reasoning {
 
-        val explainables: MutableMap<Vertex.Thing, ConceptMap.Explainable> = ConcurrentHashMap()
-        val explanationIterators: MutableMap<Vertex.Thing, Iterator<Explanation>> = ConcurrentHashMap()
+        val vertexExplainables: MutableMap<Vertex.Thing, ConceptMap.Explainable> = ConcurrentHashMap()
+        val hasEdgeExplainables: MutableMap<Pair<Vertex.Thing, Vertex.Thing.Attribute>, ConceptMap.Explainable> = ConcurrentHashMap()
+        val vertexExplanationIterators: MutableMap<Vertex.Thing, Iterator<Explanation>> = ConcurrentHashMap()
+        val hasEdgeExplanationIterators: MutableMap<Edge.Has, Iterator<Explanation>> = ConcurrentHashMap()
         private val vertexExplanations =
             Collections.synchronizedList(mutableListOf<Pair<Vertex.Thing, Explanation>>())
 

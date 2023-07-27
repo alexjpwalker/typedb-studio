@@ -24,12 +24,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import com.vaticle.typedb.client.api.logic.Explanation
 
-class Interactions constructor(private val graphArea: GraphArea) {
+class Interactions constructor(val graphArea: GraphArea) {
 
     var pointerPosition: Offset? by mutableStateOf(null)
     var hoveredVertex: Vertex? by mutableStateOf(null)
-    val hoveredVertexChecker = HoveredVertexChecker(graphArea)
     var hoveredVertexExplanations: Set<Explanation> by mutableStateOf(emptySet())
+    var hoveredEdge: Edge? by mutableStateOf(null)
+    val hoveredObjectChecker = HoveredObjectChecker(graphArea)
 
     private var _focusedVertex: Vertex? by mutableStateOf(null)
     var focusedVertex: Vertex?
@@ -63,7 +64,7 @@ class Interactions constructor(private val graphArea: GraphArea) {
         } else emptySet()
     }
 
-    class HoveredVertexChecker constructor(private val graphArea: GraphArea) : BackgroundTask(runIntervalMs = 33) {
+    class HoveredObjectChecker constructor(private val graphArea: GraphArea) : BackgroundTask(runIntervalMs = 33) {
 
         private val interactions get() = graphArea.interactions
 
@@ -73,12 +74,14 @@ class Interactions constructor(private val graphArea: GraphArea) {
 
         override fun run() {
             val hoveredVertex = interactions.pointerPosition?.let { graphArea.viewport.findVertexAt(it, interactions) }
-            if (interactions.hoveredVertex == hoveredVertex) return
-            interactions.hoveredVertex = hoveredVertex
-            interactions.hoveredVertexExplanations = when (hoveredVertex) {
-                null -> emptySet()
-                else -> graphArea.graph.reasoning.explanationsByVertex[hoveredVertex] ?: emptySet()
+            if (interactions.hoveredVertex != hoveredVertex) {
+                interactions.hoveredVertex = hoveredVertex
+                interactions.hoveredVertexExplanations = when (hoveredVertex) {
+                    null -> emptySet()
+                    else -> graphArea.graph.reasoning.explanationsByVertex[hoveredVertex] ?: emptySet()
+                }
             }
+            interactions.hoveredEdge = interactions.pointerPosition?.let { graphArea.viewport.findEdgeAt(it, interactions) }
         }
     }
 }

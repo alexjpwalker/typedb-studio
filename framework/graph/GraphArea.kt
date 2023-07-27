@@ -51,7 +51,6 @@ import com.vaticle.typedb.studio.service.connection.TransactionState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import mu.KotlinLogging
 
 class GraphArea(transactionState: TransactionState) {
 
@@ -82,7 +81,7 @@ class GraphArea(transactionState: TransactionState) {
 
         LaunchedEffect(this) { physicsRunner.launch() }
         LaunchedEffect(this, viewport.scale, viewport.density) {
-            interactions.hoveredVertexChecker.launch()
+            interactions.hoveredObjectChecker.launch()
         }
         LaunchedEffect(this) {
             VertexExpandAnimator(graphArea = this@GraphArea, coroutines = this).launch()
@@ -268,9 +267,16 @@ class GraphArea(transactionState: TransactionState) {
                             if (tryAwaitRelease()) graphArea.interactions.draggedVertex = null
                         },
                         onDoubleTap = { point ->
-                            graphArea.viewport.findVertexAt(point, graphArea.interactions)?.let {
+                            val tappedVertex = graphArea.viewport.findVertexAt(point, graphArea.interactions)?.also {
                                 // TODO: this should require SHIFT-doubleclick, not doubleclick
-                                if (it is Vertex.Thing && it.thing.isInferred) graphArea.graphBuilder.tryExplain(it)
+                                if (it is Vertex.Thing && it.thing.isInferred) graphArea.graphBuilder.tryExplainThing(it)
+                            }
+                            if (tappedVertex == null) {
+                                graphArea.viewport.findEdgeAt(point, graphArea.interactions)?.let {
+                                    if (it is Edge.Has && Pair(it.source, it.target) in graphArea.graph.reasoning.hasEdgeExplainables) {
+                                        graphArea.graphBuilder.tryExplainOwnership(it)
+                                    }
+                                }
                             }
                         }
                     ) /* onTap = */ { point ->

@@ -36,6 +36,10 @@ class EdgeRenderer(private val graphArea: GraphArea, private val ctx: RendererCo
         private const val BACKGROUND_ALPHA = .25f
         private const val ARROWHEAD_LENGTH = 6f
         private const val ARROWHEAD_WIDTH = 3f
+
+        internal fun Edge.isExplainable(graph: Graph): Boolean {
+            return this is Edge.Inferrable && (isInferred || Pair(source, target) in graph.reasoning.hasEdgeExplainables)
+        }
     }
 
     private val viewport = graphArea.viewport
@@ -205,10 +209,11 @@ class EdgeRenderer(private val graphArea: GraphArea, private val ctx: RendererCo
 
     private fun drawLabel(edge: Edge) {
         val center = with(viewport) { (edge.geometry.curveMidpoint ?: edge.geometry.midpoint).toViewport() }
-        val baseColor = if (edge is Edge.Inferrable && edge.isInferred) ctx.theme.inferred else ctx.theme.edgeLabel
+        val baseColor = if (edge.isExplainable(graphArea.graph)) ctx.theme.inferred else ctx.theme.edgeLabel
         val alpha = with(interactions) { if (edge.isBackground) BACKGROUND_ALPHA else 1f }
-        graphArea.textRenderer.drawSingleLine(ctx.drawScope, edge.label, center, baseColor.copy(alpha), ctx.typography)
+        graphArea.textRenderer.drawSingleLine(ctx.drawScope, edge.label, center, baseColor.copy(alpha), ctx.typography, isBoldFontWeight = edge == interactions.hoveredEdge)
     }
+
 
     private enum class EdgeColorCode {
         REGULAR,
@@ -218,12 +223,12 @@ class EdgeRenderer(private val graphArea: GraphArea, private val ctx: RendererCo
 
         companion object {
             fun of(edge: Edge, graphArea: GraphArea): EdgeColorCode {
-                val isInferred = edge is Edge.Inferrable && edge.isInferred
+                val isExplainable = edge.isExplainable(graphArea.graph)
                 val isBackground = with(graphArea.interactions) { edge.isBackground }
                 return when {
-                    isInferred && isBackground -> INFERRED_BACKGROUND
+                    isExplainable && isBackground -> INFERRED_BACKGROUND
                     isBackground -> BACKGROUND
-                    isInferred -> INFERRED
+                    isExplainable -> INFERRED
                     else -> REGULAR
                 }
             }

@@ -47,9 +47,9 @@ internal class TextRenderer(private val viewport: Viewport) {
     private val _edgeLabelSizes = ConcurrentHashMap<String, DpSize>()
     val edgeLabelSizes: Map<String, DpSize> get() = _edgeLabelSizes
 
-    fun drawSingleLine(drawScope: DrawScope, text: String, center: Offset, color: Color, typography: Typography.Theme) {
+    fun drawSingleLine(drawScope: DrawScope, text: String, center: Offset, color: Color, typography: Typography.Theme, isBoldFontWeight: Boolean) {
         val textLine = TextLine.make(
-            text, Font(typography.fixedWidthSkiaTypeface, typography.codeSizeMedium * viewport.density)
+            text, Font(if (isBoldFontWeight) typography.fixedWidthBoldSkiaTypeface else typography.fixedWidthSkiaTypeface, typography.codeSizeMedium * viewport.density)
         )
         drawScope.drawIntoCanvas {
             it.nativeCanvas.drawTextLine(

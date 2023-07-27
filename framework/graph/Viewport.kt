@@ -94,6 +94,18 @@ class Viewport(private val graph: Graph) {
         return nearestVertices.find { it.geometry.visuallyIntersects(worldPoint) }
     }
 
+    fun findEdgeAt(physicalPoint: Offset, interactions: Interactions): Edge? {
+        val worldPoint = physicalPointToWorldPoint(physicalPoint);
+        val priorityHit = interactions.hoveredEdge?.takeIf { it.geometry.labelVisuallyIntersects(worldPoint, graph.area.textRenderer.edgeLabelSizes[it.label]!!, density) }
+        if (priorityHit != null) return priorityHit
+        val nearestEdges = nearestEdges(worldPoint)
+        return nearestEdges.find {
+            graph.area.textRenderer.edgeLabelSizes[it.label]?.let { labelSize ->
+                it.geometry.labelVisuallyIntersects(worldPoint, labelSize, density)
+            } == true
+        }
+    }
+
     private fun physicalPointToWorldPoint(physicalPoint: Offset): Offset {
         val transformOrigin = Offset(physicalSize.width.value, physicalSize.height.value) / 2f
         val scaledPhysicalPoint = physicalPoint / density
@@ -115,6 +127,18 @@ class Viewport(private val graph: Graph) {
         return sequence {
             while (vertexDistances.isNotEmpty()) {
                 yield(vertexDistances.entries.minByOrNull { it.value }!!.key)
+            }
+        }.take(10)
+    }
+
+    private fun nearestEdges(worldPoint: Offset): Sequence<Edge> {
+        val edgeDistances = mutableMapOf<Edge, Float>()
+        graph.edges.associateWithTo(edgeDistances) {
+            (worldPoint - it.geometry.labelPosition).getDistanceSquared()
+        }
+        return sequence {
+            while (edgeDistances.isNotEmpty()) {
+                yield(edgeDistances.entries.minByOrNull { it.value }!!.key)
             }
         }.take(10)
     }
