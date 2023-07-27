@@ -92,7 +92,7 @@ sealed class VertexBackgroundRenderer(
 
     private fun isInHoveredExplanationTree(): Boolean {
         return graphArea.graph.reasoning.explanationsByVertex[vertex]
-            ?.any { it in graphArea.interactions.hoveredVertexExplanations } ?: false
+            ?.any { it in graphArea.interactions.hoveredObjectExplanations } ?: false
     }
 
     private fun isInferred() = vertex.concept is Thing && vertex.concept.isInferred

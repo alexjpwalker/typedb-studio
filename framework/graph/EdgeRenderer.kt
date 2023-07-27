@@ -40,6 +40,14 @@ class EdgeRenderer(private val graphArea: GraphArea, private val ctx: RendererCo
         internal fun Edge.isExplainable(graph: Graph): Boolean {
             return this is Edge.Inferrable && (isInferred || Pair(source, target) in graph.reasoning.hasEdgeExplainables)
         }
+
+        internal fun isInHoveredExplanationTree(edge: Edge, graphArea: GraphArea): Boolean {
+            val reasoning = graphArea.graph.reasoning
+            if (reasoning.explanationsByEdge[edge.source to edge.target]?.any { it in graphArea.interactions.hoveredObjectExplanations } == true) return true
+            if ((reasoning.explanationsByVertex[edge.source]?.any { it in graphArea.interactions.hoveredObjectExplanations } == true)
+                && (reasoning.explanationsByVertex[edge.target]?.any { it in graphArea.interactions.hoveredObjectExplanations } == true)) return true
+            return false
+        }
     }
 
     private val viewport = graphArea.viewport
@@ -209,23 +217,29 @@ class EdgeRenderer(private val graphArea: GraphArea, private val ctx: RendererCo
 
     private fun drawLabel(edge: Edge) {
         val center = with(viewport) { (edge.geometry.curveMidpoint ?: edge.geometry.midpoint).toViewport() }
-        val baseColor = if (edge.isExplainable(graphArea.graph)) ctx.theme.inferred else ctx.theme.edgeLabel
+        val baseColor = when {
+            isInHoveredExplanationTree(edge, graphArea) -> ctx.theme.explanation
+            edge.isExplainable(graphArea.graph) -> ctx.theme.inferred
+            else -> ctx.theme.edgeLabel
+        }
         val alpha = with(interactions) { if (edge.isBackground) BACKGROUND_ALPHA else 1f }
         graphArea.textRenderer.drawSingleLine(ctx.drawScope, edge.label, center, baseColor.copy(alpha), ctx.typography, isBoldFontWeight = edge == interactions.hoveredEdge)
     }
-
 
     private enum class EdgeColorCode {
         REGULAR,
         BACKGROUND,
         INFERRED,
-        INFERRED_BACKGROUND;
+        INFERRED_BACKGROUND,
+        EXPLANATION;
 
         companion object {
             fun of(edge: Edge, graphArea: GraphArea): EdgeColorCode {
+                val isInHoveredExplanationTree = isInHoveredExplanationTree(edge, graphArea)
                 val isExplainable = edge.isExplainable(graphArea.graph)
                 val isBackground = with(graphArea.interactions) { edge.isBackground }
                 return when {
+                    isInHoveredExplanationTree -> EXPLANATION
                     isExplainable && isBackground -> INFERRED_BACKGROUND
                     isBackground -> BACKGROUND
                     isExplainable -> INFERRED
@@ -239,6 +253,7 @@ class EdgeRenderer(private val graphArea: GraphArea, private val ctx: RendererCo
             BACKGROUND -> theme.edge.copy(alpha = BACKGROUND_ALPHA)
             INFERRED -> theme.inferred
             INFERRED_BACKGROUND -> theme.inferred.copy(alpha = BACKGROUND_ALPHA)
+            EXPLANATION -> theme.explanation
         }
     }
 

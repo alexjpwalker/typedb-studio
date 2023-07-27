@@ -267,22 +267,23 @@ class Graph(private val interactions: Interactions) {
         val hasEdgeExplainables: MutableMap<Pair<Vertex.Thing, Vertex.Thing.Attribute>, ConceptMap.Explainable> = ConcurrentHashMap()
         val vertexExplanationIterators: MutableMap<Vertex.Thing, Iterator<Explanation>> = ConcurrentHashMap()
         val hasEdgeExplanationIterators: MutableMap<Edge.Has, Iterator<Explanation>> = ConcurrentHashMap()
-        private val vertexExplanations =
-            Collections.synchronizedList(mutableListOf<Pair<Vertex.Thing, Explanation>>())
+        private val vertexExplanations = Collections.synchronizedList(mutableListOf<Pair<Vertex.Thing, Explanation>>())
+        private val edgeExplanations = Collections.synchronizedList(mutableListOf<Pair<Pair<Vertex.Thing, Vertex.Thing.Attribute>, Explanation>>())
 
         var explanationsByVertex: Map<Vertex.Thing, Set<Explanation>> = emptyMap(); private set
+        var explanationsByEdge: Map<Pair<Vertex.Thing, Vertex.Thing.Attribute>, Set<Explanation>> = emptyMap(); private set
 
-        fun addVertexExplanations(vertexExplanations: Iterable<Pair<Vertex.Thing, Explanation>>) {
+        fun addObjectExplanations(vertexExplanations: Iterable<Pair<Vertex.Thing, Explanation>>, edgeExplanations: Iterable<Pair<Pair<Vertex.Thing, Vertex.Thing.Attribute>, Explanation>>) {
             synchronized(vertexExplanations) {
                 this.vertexExplanations += vertexExplanations
+                this.edgeExplanations += edgeExplanations
                 rebuildIndexes()
             }
         }
 
         private fun rebuildIndexes() {
-            explanationsByVertex = vertexExplanations
-                .groupBy({ it.first }) { it.second }
-                .mapValues { it.value.toSet() }
+            explanationsByVertex = vertexExplanations.groupBy({ it.first }) { it.second }.mapValues { it.value.toSet() }
+            explanationsByEdge = edgeExplanations.groupBy({ it.first }) { it.second }.mapValues { it.value.toSet() }
         }
     }
 }

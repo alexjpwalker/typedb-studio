@@ -28,7 +28,7 @@ class Interactions constructor(val graphArea: GraphArea) {
 
     var pointerPosition: Offset? by mutableStateOf(null)
     var hoveredVertex: Vertex? by mutableStateOf(null)
-    var hoveredVertexExplanations: Set<Explanation> by mutableStateOf(emptySet())
+    var hoveredObjectExplanations: Set<Explanation> by mutableStateOf(emptySet())
     var hoveredEdge: Edge? by mutableStateOf(null)
     val hoveredObjectChecker = HoveredObjectChecker(graphArea)
 
@@ -73,15 +73,30 @@ class Interactions constructor(val graphArea: GraphArea) {
         }
 
         override fun run() {
+            var hasChanges = false
             val hoveredVertex = interactions.pointerPosition?.let { graphArea.viewport.findVertexAt(it, interactions) }
             if (interactions.hoveredVertex != hoveredVertex) {
+                hasChanges = true
                 interactions.hoveredVertex = hoveredVertex
-                interactions.hoveredVertexExplanations = when (hoveredVertex) {
-                    null -> emptySet()
-                    else -> graphArea.graph.reasoning.explanationsByVertex[hoveredVertex] ?: emptySet()
+            }
+            val hoveredEdge = interactions.pointerPosition?.let { graphArea.viewport.findEdgeAt(it, interactions) }
+            if (interactions.hoveredEdge != hoveredEdge) {
+                hasChanges = true
+                interactions.hoveredEdge = hoveredEdge
+            }
+            if (hasChanges) {
+                interactions.hoveredObjectExplanations = when {
+                    hoveredVertex == null && hoveredEdge == null -> emptySet()
+                    hoveredVertex != null -> graphArea.graph.reasoning.explanationsByVertex[hoveredVertex] ?: emptySet()
+                    hoveredEdge != null -> {
+                        val set1 = graphArea.graph.reasoning.explanationsByEdge[hoveredEdge.source to hoveredEdge.target] ?: emptySet()
+                        val set2 = graphArea.graph.reasoning.explanationsByVertex[hoveredEdge.source] ?: emptySet()
+                        val set3 = graphArea.graph.reasoning.explanationsByVertex[hoveredEdge.target] ?: emptySet()
+                        set1 union (set2 intersect set3)
+                    }
+                    else -> emptySet() /* should not be reachable */
                 }
             }
-            interactions.hoveredEdge = interactions.pointerPosition?.let { graphArea.viewport.findEdgeAt(it, interactions) }
         }
     }
 }

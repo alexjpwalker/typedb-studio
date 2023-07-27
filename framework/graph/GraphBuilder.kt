@@ -57,7 +57,7 @@ class GraphBuilder(
     private val vertexExplainables = ConcurrentHashMap<Vertex.Thing, ConceptMap.Explainable>()
     private val vertexExplanations = ConcurrentLinkedQueue<Pair<Vertex.Thing, Explanation>>()
     private val hasEdgeExplainables = ConcurrentHashMap<Pair<Vertex.Thing, Vertex.Thing.Attribute>, ConceptMap.Explainable>()
-    private val hasEdgeExplanations = ConcurrentLinkedQueue<Pair<Edge.Has, Explanation>>()
+    private val hasEdgeExplanations = ConcurrentLinkedQueue<Pair<Pair<Vertex.Thing, Vertex.Thing.Attribute>, Explanation>>()
     private val lock = ReentrantReadWriteLock(true)
     private val transactionID = transactionState.transaction?.hashCode()
     private val snapshotEnabled = transactionState.snapshot.value
@@ -283,7 +283,7 @@ class GraphBuilder(
     }
 
     private fun dumpExplanationStructureTo(graph: Graph) {
-        graph.reasoning.addVertexExplanations(vertexExplanations)
+        graph.reasoning.addObjectExplanations(vertexExplanations, hasEdgeExplanations)
         vertexExplanations.clear()
     }
 
@@ -334,7 +334,7 @@ class GraphBuilder(
     private fun fetchNextHasEdgeExplanation(edge: Edge.Has, iterator: Iterator<Explanation>) {
         if (iterator.hasNext()) {
             val explanation = iterator.next()
-            hasEdgeExplanations += edge to explanation
+            hasEdgeExplanations += Pair(edge.source, edge.target) to explanation
             loadConceptMap(explanation.condition(), AnswerSource.Explanation(explanation))
         } else Service.notification.info(LOGGER, FULLY_EXPLAINED)
     }
