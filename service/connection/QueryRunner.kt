@@ -42,15 +42,18 @@ import com.vaticle.typeql.lang.query.TypeQLInsert
 import com.vaticle.typeql.lang.query.TypeQLQuery
 import com.vaticle.typeql.lang.query.TypeQLUndefine
 import com.vaticle.typeql.lang.query.TypeQLUpdate
+import io.sentry.ITransaction
+import io.sentry.Sentry
+import io.sentry.SpanStatus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import mu.KotlinLogging
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.stream.Stream
 import kotlin.streams.toList
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import mu.KotlinLogging
 
 class QueryRunner constructor(
     val transactionState: TransactionState, // TODO: restrict in the future, when TypeDB 3.0 answers return complete info
@@ -144,14 +147,18 @@ class QueryRunner constructor(
     }
 
     internal fun launch() = coroutines.launchAndHandle(notificationSrv, LOGGER) {
+        val tx: ITransaction = Sentry.startTransaction("QueryRunner.launch", "queries")
         try {
             isRunning.set(true)
             startTime = System.currentTimeMillis()
             runQueries(TypeQL.parseQueries<TypeQLQuery>(queries).toList())
         } catch (e: Exception) {
+            tx.setThrowable(e)
+            tx.setStatus(SpanStatus.INTERNAL_ERROR)
             collectEmptyLine()
             collectMessage(ERROR, ERROR_ + e.message)
         } finally {
+            tx.finish()
             endTime = System.currentTimeMillis()
             isRunning.set(false)
             responses.add(Response.Done)

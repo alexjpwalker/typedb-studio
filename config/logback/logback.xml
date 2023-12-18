@@ -22,8 +22,16 @@
         </encoder>
     </appender>
 
+    <appender name="Sentry" class="io.sentry.logback.SentryAppender">
+        <options>
+            <dsn>https://9c327cb98a925974587f98adb192a89b@o4506315929812992.ingest.sentry.io/4506355166806016</dsn>
+        </options>
+        <minimumEventLevel>ERROR</minimumEventLevel>
+    </appender>
+
     <root level="ERROR">
         <appender-ref ref="STDOUT"/>
+        <appender-ref ref="Sentry" />
     </root>
 
     <logger name="io.grpc" level="ERROR"/>

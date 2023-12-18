@@ -92,12 +92,21 @@ import com.vaticle.typedb.studio.service.common.util.Message
 import com.vaticle.typedb.studio.service.common.util.Sentence
 import com.vaticle.typedb.studio.service.project.FileState
 import com.vaticle.typedb.studio.service.schema.ThingTypeState
-import java.awt.Window
-import java.awt.event.WindowEvent
-import javax.swing.UIManager
-import kotlin.system.exitProcess
+import io.sentry.Sentry
+import io.sentry.SentryOptions
+import io.sentry.protocol.User
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import java.awt.Window
+import java.awt.event.WindowEvent
+import java.io.IOException
+import java.net.InetAddress
+import java.net.NetworkInterface
+import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
+import java.util.Base64
+import javax.swing.UIManager
+import kotlin.system.exitProcess
 
 object Studio {
 
@@ -107,6 +116,7 @@ object Studio {
     private val ERROR_WINDOW_CONTENT_PADDING = 10.dp
     private val ERROR_WINDOW_LABEL_WIDTH = 40.dp
     private val LOGGER = KotlinLogging.logger {}
+    private val SENTRY_SERVICE_ADDRESS = "https://9c327cb98a925974587f98adb192a89b@o4506315929812992.ingest.sentry.io/4506355166806016";
 
     private var error: Throwable? by mutableStateOf(null)
     private var quit: Boolean by mutableStateOf(false)
@@ -303,6 +313,28 @@ object Studio {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) // Set UI style for Windows
     }
 
+    private fun configureDiagnostics() {
+        Sentry.init { options: SentryOptions ->
+            options.dsn = SENTRY_SERVICE_ADDRESS
+            options.tracesSampleRate = 1.0
+            options.isSendDefaultPii = false
+        }
+        val user = User()
+        user.username = sentryInstanceId()
+        Sentry.setUser(user)
+    }
+
+    fun sentryInstanceId(): String {
+        return try {
+            val mac = NetworkInterface.getByInetAddress(InetAddress.getLocalHost()).getHardwareAddress()
+            Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(mac))
+        } catch (e: NoSuchAlgorithmException) {
+            ""
+        } catch (e: IOException) {
+            ""
+        }
+    }
+
     @OptIn(ExperimentalComposeUiApi::class)
     private fun application(window: @Composable ApplicationScope.() -> Unit) {
         androidx.compose.ui.window.application(exitProcessOnExit = false) {
@@ -319,12 +351,14 @@ object Studio {
         try {
             addShutdownHook()
             setConfigurations()
+            configureDiagnostics()
             Message.loadClasses()
             Service.data.initialise()
             while (!quit) {
                 application { MainWindow(::exitApplication) }
                 error?.let { exception ->
                     LOGGER.error(exception.message, exception)
+                    Sentry.captureException(exception)
                     application { ErrorWindow(exception) { error = null; exitApplication() } }
                 }
             }

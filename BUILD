@@ -59,6 +59,8 @@ kt_jvm_library(
 
         # External Maven Dependencies
         "@maven//:io_github_microutils_kotlin_logging_jvm",
+        "@maven//:io_sentry_sentry",
+        "@maven//:io_sentry_sentry_logback",
         "@maven//:org_jetbrains_compose_foundation_foundation_desktop",
         "@maven//:org_jetbrains_compose_foundation_foundation_layout_desktop",
         "@maven//:org_jetbrains_compose_runtime_runtime_desktop",

@@ -19,6 +19,8 @@ artifacts = [
     "ch.qos.logback:logback-classic",
     "ch.qos.logback:logback-core",
     "io.github.microutils:kotlin-logging-jvm",
+    "io.sentry:sentry",
+    "io.sentry:sentry-logback",
     "junit:junit",
     "org.antlr:antlr4-runtime",
     "org.jetbrains.compose.compiler:compiler",
