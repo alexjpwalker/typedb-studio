@@ -101,6 +101,15 @@ class SessionState constructor(
         }
     }
 
+    internal fun reopen() {
+        if (!isResetting.get() && isOpenAtomic.compareAndSet(expected = true, new = false)) {
+            val currentDatabase = database
+            val currentSessionType = type
+            reset()
+            tryOpen(currentDatabase, currentSessionType)
+        }
+    }
+
     private fun closed(message: Message? = null, vararg params: Any) {
         if (!isResetting.get() && isOpenAtomic.compareAndSet(expected = true, new = false)) {
             database = null

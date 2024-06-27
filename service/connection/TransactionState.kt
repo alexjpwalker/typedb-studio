@@ -157,6 +157,7 @@ class TransactionState constructor(
             _transaction = null
             hasRunningQueryAtomic.set(false)
             message?.let { notificationSrv.userError(LOGGER, it, *params) }
+            session.close()
             mayExecOnSchemaWriteReset()
         }
     }
