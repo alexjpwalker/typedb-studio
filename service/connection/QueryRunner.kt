@@ -19,6 +19,7 @@ import com.typedb.studio.service.connection.QueryRunner.Response.Stream.ConceptR
 import com.typedb.common.collection.Either
 import com.typedb.driver.api.answer.ConceptRow
 import com.typedb.driver.api.answer.JSON
+import com.typedb.driver.api.answer.QueryAnswer
 import com.typeql.lang.TypeQL
 import com.typeql.lang.query.TypeQLDefine
 import com.typeql.lang.query.TypeQLDelete
@@ -56,14 +57,18 @@ class QueryRunner(
 
         data class Value(val value: com.typedb.driver.api.concept.value.Value) : Response()
 
-        sealed class Stream<T> : Response() {
+//        sealed class Stream<T> : Response() {
+//
+//            val queue = LinkedBlockingQueue<Either<T, Done>>()
+//
+//            class JSONs : Stream<JSON>()
+//            class ConceptRows constructor(val source: Source) : Stream<ConceptRow>() {
+//                enum class Source { INSERT, UPDATE, GET }
+//            }
+//        }
 
-            val queue = LinkedBlockingQueue<Either<T, Done>>()
-
-            class JSONs : Stream<JSON>()
-            class ConceptRows constructor(val source: Source) : Stream<ConceptRow>() {
-                enum class Source { INSERT, UPDATE, GET }
-            }
+        class Stream : Response() {
+            val queue = LinkedBlockingQueue<Either<Any, Done>>()
         }
     }
 
@@ -73,6 +78,8 @@ class QueryRunner(
         const val RUNNING_ = "## Running> "
         const val COMPLETED = "## Completed"
         const val TERMINATED = "## Terminated"
+        const val QUERY = "Query:"
+        const val QUERY_SUCCESS = "Query successfully executed."
         const val DEFINE_QUERY = "Define query:"
         const val DEFINE_QUERY_SUCCESS = "Define query successfully defined new types in the schema."
         const val UNDEFINE_QUERY = "Undefine query:"
@@ -170,19 +177,14 @@ class QueryRunner(
 
     private fun runQueries(queries: String) {
         if (hasStopSignal) return
-        runStreamingQuery(
-            name = GET_QUERY,
-            successMsg = GET_QUERY_SUCCESS,
-            noResultMsg = GET_QUERY_NO_RESULT,
-            queryStr = queries,
-            stream = Response.Stream.ConceptRows(GET)
-        ) {
-            val answer = transaction.query(queries).resolve()
-            if (answer.isOk) return@runStreamingQuery Stream.empty()
-            else if (answer.isConceptRows) return@runStreamingQuery answer.asConceptRows().stream()
-//            else if (answer.isConceptDocuments) return@runStreamingQuery answer.asConceptDocuments().stream()
+        printQueryStart(QUERY, queries)
+        val results = transaction.query(queries).resolve()
+        val stream =
+            if (results.isOk) Stream.empty()
+            else if (results.isConceptRows) results.asConceptRows().stream()
+            else if (results.isConceptDocuments) results.asConceptDocuments().stream()
             else throw IllegalArgumentException()
-        }
+        collectResponseStream(results, QUERY_SUCCESS, QUERY_SUCCESS, stream)
     }
 
     private fun runDefineQuery(query: TypeQLDefine) = runUnitQuery(
@@ -265,17 +267,17 @@ class QueryRunner(
         collectMessage(SUCCESS, RESULT_ + successMsg)
     }
 
-    private fun <T : Any> runStreamingQuery(
-        name: String,
-        successMsg: String,
-        noResultMsg: String,
-        queryStr: String,
-        stream: Response.Stream<T>,
-        queryFn: () -> Stream<T>
-    ) {
-        printQueryStart(name, queryStr)
-        collectResponseStream(queryFn(), successMsg, noResultMsg, stream)
-    }
+//    private fun <T : Any> runStreamingQuery(
+//        name: String,
+//        successMsg: String,
+//        noResultMsg: String,
+//        queryStr: String,
+//        stream: Response.Stream<T>,
+//        queryFn: () -> Stream<T>
+//    ) {
+//        printQueryStart(name, queryStr)
+//        collectResponseStream(queryFn(), successMsg, noResultMsg, stream)
+//    }
 
     private fun printQueryStart(name: String, queryStr: String) {
         collectEmptyLine()
@@ -284,24 +286,28 @@ class QueryRunner(
     }
 
     private fun <T : Any> collectResponseStream(
-        results: Stream<T>,
+        results: QueryAnswer,
         successMsg: String,
         noResultMsg: String,
-        stream: Response.Stream<T>
+        stream: Response.Stream
     ) {
         var started = false
         var error = false
         try {
             collectEmptyLine()
-            results.peek {
-                if (started) return@peek
-                collectMessage(SUCCESS, RESULT_ + successMsg)
-                responses.put(stream)
-                started = true
-            }.forEach {
-                if (hasStopSignal) return@forEach
-                stream.queue.put(Either.first(it))
-            }
+            collectMessage(SUCCESS, RESULT_ + successMsg)
+            started = true
+            if (hasStopSignal) return
+            stream.queue.put(Either.first(results))
+//            results.peek {
+//                if (started) return@peek
+//                collectMessage(SUCCESS, RESULT_ + successMsg)
+//                responses.put(stream)
+//                started = true
+//            }.forEach {
+//                if (hasStopSignal) return@forEach
+//                stream.queue.put(Either.first(it))
+//            }
         } catch (e: Exception) {
             collectMessage(ERROR, ERROR_ + e.message)
             error = true
